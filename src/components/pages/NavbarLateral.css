@@ -1,0 +1,50 @@
+.sidebar {
+  width: 250px;
+  transition: width 0.3s ease, margin-left 0.3s ease;
+  background-color: #343a40;
+  height: 100vh;
+  position: fixed;
+  z-index: 1000;
+  top: 0;
+  left: 0;
+}
+
+.sidebar.closed {
+  width: 50px;
+}
+
+.nav-content {
+  padding-top: 60px;
+}
+
+.nav-content .nav-link {
+  color: white;
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+}
+
+.nav-content .nav-link:hover {
+  background-color: #495057;
+}
+
+.toggle-btn {
+  background-color: #343a40;
+  border: none;
+  color: white;
+  position: absolute;
+  top: 15px;
+  right: -20px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1001;
+}
+
+.toggle-btn:hover {
+  background-color: #495057;
+}

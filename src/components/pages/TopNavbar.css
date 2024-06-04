@@ -1,0 +1,17 @@
+.navbar-top {
+    width: 100%;
+  }
+  
+  .navbar-top .nav {
+    margin-left: auto;
+  }
+  
+  .navbar-top .nav .nav-item span,
+  .navbar-top .nav .nav-link {
+    color: white !important; /* Asegura que el texto sea blanco */
+  }
+  
+  .navbar-top .nav .nav-link:hover {
+    color: #ccc !important; /* Color al pasar el cursor */
+  }
+  

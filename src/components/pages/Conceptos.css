@@ -1,0 +1,83 @@
+/* Ajustar el contenedor principal */
+.evaluacion-container {
+  padding: 20px;
+  background-color: rgba(255, 255, 255, 0.9); /* Fondo translúcido */
+  border-radius: 10px;
+  margin-top: 10px; /* Reduce el margen superior */
+}
+
+/* Asegurarse de que las imágenes tienen un tamaño uniforme */
+.pregunta-imagen {
+  width: 100px;
+  height: auto;
+}
+
+/* Estilo para la tabla */
+.table {
+  width: 100%;
+  margin-bottom: 1rem;
+  color: #212529;
+}
+
+.table th,
+.table td {
+  vertical-align: top;
+  text-align: left;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.table th {
+  background-color: #007bff;
+  color: white;
+}
+
+.table-responsive {
+  display: table;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  -ms-overflow-style: -ms-autohiding-scrollbar;
+}
+
+.multiline-cell {
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+/* Estilo para los botones de acción */
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+/* Estilo para el botón de agregar ejercicio */
+.add-button {
+  float: right;
+  margin-bottom: 10px;
+}
+
+/* Estilo para el título */
+.evaluacion-title {
+  margin-bottom: 10px;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+/* Estilo de la imagen del concepto */
+.concepto-imagen {
+  width: 100px;
+  height: auto;
+}
+
+/* Fondo translúcido para la tabla y el contenedor */
+.custom-container {
+  background-color: rgba(255, 255, 255, 0.7);
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  max-height: 500px;
+}
