@@ -28,7 +28,7 @@ const Conceptos = () => {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          "http://localhost:4000/api/auth/perfil",
+          "https://back-serious-game.vercel.app/api/auth/perfil",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -67,7 +67,7 @@ const Conceptos = () => {
 
   const fetchConceptos = async (searchQuery = "", searchCategoria = "") => {
     const { data } = await axios.get(
-      "http://localhost:4000/api/getconceptos/",
+      "https://back-serious-game.vercel.app/api/getconceptos/",
       {
         params: { titulo: searchQuery, categoria_id: searchCategoria },
       }
@@ -77,7 +77,7 @@ const Conceptos = () => {
 
   const fetchCategorias = async () => {
     try {
-      const { data } = await axios.get("http://localhost:4000/api/categorias");
+      const { data } = await axios.get("https://back-serious-game.vercel.app/api/categorias");
       setCategorias(data);
     } catch (error) {
       console.error("Error al obtener las categorías:", error);
@@ -88,7 +88,7 @@ const Conceptos = () => {
     if (window.confirm("¿Estás seguro de que deseas eliminar este concepto?")) {
       try {
         const response = await axios.delete(
-          `http://localhost:4000/api/deleteconceptos/${concepto_id}`
+          `https://back-serious-game.vercel.app/api/deleteconceptos/${concepto_id}`
         );
         if (response.status === 200) {
           setConceptos(
@@ -137,8 +137,8 @@ const Conceptos = () => {
 
     const method = currentConcepto.concepto_id ? "put" : "post";
     const url = currentConcepto.concepto_id
-      ? `http://localhost:4000/api/edit/${currentConcepto.concepto_id}`
-      : "http://localhost:4000/api/postconceptos/";
+      ? `https://back-serious-game.vercel.app/api/edit/${currentConcepto.concepto_id}`
+      : "https://back-serious-game.vercel.app/api/postconceptos/";
 
     try {
       const response = await axios({
@@ -299,7 +299,7 @@ const Conceptos = () => {
                         <td>
                           {concepto.imagen ? (
                             <img
-                              src={`http://localhost:4000/src/uploads/${concepto.imagen}`}
+                              src={`https://back-serious-game.vercel.app/src/uploads/${concepto.imagen}`}
                               alt="Concepto"
                               className="concepto-imagen"
                             />
@@ -408,7 +408,7 @@ const Conceptos = () => {
                   !(currentConcepto.imagen instanceof File) && (
                     <div className="mt-3">
                       <img
-                        src={`http://localhost:4000/src/uploads/${currentConcepto.imagen}`}
+                        src={`https://back-serious-game.vercel.app/src/uploads/${currentConcepto.imagen}`}
                         alt="Concepto"
                         className="concepto-imagen"
                       />

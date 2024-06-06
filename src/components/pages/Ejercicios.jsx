@@ -25,7 +25,7 @@ const useEjercicios = () => {
   const fetchEjercicios = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:4000/api/getejercicios"
+        "https://back-serious-game.vercel.app/api/getejercicios"
       );
       setEjercicios(response.data);
     } catch (error) {
@@ -36,7 +36,7 @@ const useEjercicios = () => {
   const searchEjercicios = async (pregunta) => {
     try {
       const response = await axios.get(
-        `http://localhost:4000/api/buscarejercicios?pregunta=${pregunta}`
+        `https://back-serious-game.vercel.app/api/buscarejercicios?pregunta=${pregunta}`
       );
       setEjercicios(response.data);
     } catch (error) {
@@ -60,7 +60,7 @@ const Ejercicios = () => {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          "http://localhost:4000/api/auth/perfil",
+          "https://back-serious-game.vercel.app/api/auth/perfil",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -98,7 +98,7 @@ const Ejercicios = () => {
 
   const fetchTiposEjercicios = async () => {
     try {
-      const response = await axios.get("http://localhost:4000/api/tipos");
+      const response = await axios.get("https://back-serious-game.vercel.app/api/tipos");
       setTiposEjercicios(response.data);
     } catch (error) {
       console.error("Error al obtener los tipos de ejercicios:", error);
@@ -164,8 +164,8 @@ const Ejercicios = () => {
     try {
       const method = currentEjercicio.ejercicio_id ? "put" : "post";
       const url = currentEjercicio.ejercicio_id
-        ? `http://localhost:4000/api/ejercicios/${currentEjercicio.ejercicio_id}`
-        : "http://localhost:4000/api/ejercicios";
+        ? `https://back-serious-game.vercel.app/api/ejercicios/${currentEjercicio.ejercicio_id}`
+        : "https://back-serious-game.vercel.app/api/ejercicios";
 
       await axios({
         method: method,
@@ -190,7 +190,7 @@ const Ejercicios = () => {
     ) {
       try {
         await axios.delete(
-          `http://localhost:4000/api/ejercicios/${ejercicioId}`
+          `https://back-serious-game.vercel.app/api/ejercicios/${ejercicioId}`
         );
         fetchEjercicios();
       } catch (error) {
@@ -467,8 +467,8 @@ const Ejercicios = () => {
                       <td>
                         {ejercicio.imagen && (
                           <img
-                            src={`http://localhost:4000/src/uploads/${ejercicio.imagen}`}
-                            alt={`http://localhost:4000/${ejercicio.imagen}`}
+                            src={`https://back-serious-game.vercel.app/src/uploads/${ejercicio.imagen}`}
+                            alt={`https://back-serious-game.vercel.app/${ejercicio.imagen}`}
                             className="pregunta-imagen"
                             style={{ maxWidth: "100px", maxHeight: "100px" }}
                           />

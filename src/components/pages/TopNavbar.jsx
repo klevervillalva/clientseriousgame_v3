@@ -18,7 +18,7 @@ const TopNavbar = () => {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          "http://localhost:4000/api/auth/perfil",
+          "https://back-serious-game.vercel.app/api/auth/perfil",
           {
             headers: {
               Authorization: `Bearer ${token}`,

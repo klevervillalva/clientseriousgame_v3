@@ -14,7 +14,7 @@ const UserAdd = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("http://localhost:4000/api/auth/signup", {
+      await axios.post("https://back-serious-game.vercel.app/api/auth/signup", {
         nombre,
         email,
         password,

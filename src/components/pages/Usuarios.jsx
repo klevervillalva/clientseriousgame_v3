@@ -37,7 +37,7 @@ const Usuarios = () => {
   const fetchUsers = async (searchQuery = "", searchRol = "") => {
     try {
       const response = await axios.get(
-        "http://localhost:4000/api/searchusers",
+        "https://back-serious-game.vercel.app/api/searchusers",
         {
           params: { nombre: searchQuery, rol: searchRol },
         }
@@ -57,7 +57,7 @@ const Usuarios = () => {
   const handleDelete = async (userId) => {
     if (window.confirm("¿Estás seguro de que deseas eliminar este usuario?")) {
       try {
-        await axios.delete(`http://localhost:4000/api/deleteusers/${userId}`);
+        await axios.delete(`https://back-serious-game.vercel.app/api/deleteusers/${userId}`);
         fetchUsers();
       } catch (error) {
         console.error("Error al eliminar el usuario:", error);
@@ -71,11 +71,11 @@ const Usuarios = () => {
     try {
       if (modalType === "edit") {
         await axios.put(
-          `http://localhost:4000/api/putusers/${currentUser.usuario_id}`,
+          `https://back-serious-game.vercel.app/api/putusers/${currentUser.usuario_id}`,
           currentUser
         );
       } else {
-        await axios.post("http://localhost:4000/api/auth/signup", currentUser);
+        await axios.post("https://back-serious-game.vercel.app/api/auth/signup", currentUser);
       }
       setShowModal(false);
       fetchUsers();

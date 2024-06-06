@@ -27,10 +27,10 @@ const usePreguntas = () => {
     try {
       const response = await axios.get(
         searchQuery
-          ? `http://localhost:4000/api/search/${encodeURIComponent(
+          ? `https://back-serious-game.vercel.app/api/search/${encodeURIComponent(
               searchQuery
             )}`
-          : "http://localhost:4000/api/preguntas/obtener"
+          : "https://back-serious-game.vercel.app/api/preguntas/obtener"
       );
       setPreguntas(response.data);
     } catch (error) {
@@ -115,8 +115,8 @@ const Evaluacion = () => {
     try {
       const method = currentPregunta.pregunta_id ? "put" : "post";
       const url = currentPregunta.pregunta_id
-        ? `http://localhost:4000/api/preguntas/${currentPregunta.pregunta_id}`
-        : "http://localhost:4000/api/preguntas";
+        ? `https://back-serious-game.vercel.app/api/preguntas/${currentPregunta.pregunta_id}`
+        : "https://back-serious-game.vercel.app/api/preguntas";
 
       await axios({
         method: method,
@@ -138,7 +138,7 @@ const Evaluacion = () => {
   const handleDelete = async (preguntaId) => {
     if (window.confirm("¿Estás seguro de que deseas eliminar esta pregunta?")) {
       try {
-        await axios.delete(`http://localhost:4000/api/preguntas/${preguntaId}`);
+        await axios.delete(`https://back-serious-game.vercel.app/api/preguntas/${preguntaId}`);
         fetchPreguntas();
       } catch (error) {
         console.error("Error al eliminar la pregunta:", error);
@@ -390,7 +390,7 @@ const Evaluacion = () => {
                       <td>
                         {pregunta.imagen && (
                           <img
-                            src={`https://backseriousgame.onrender.com/src/uploads/${pregunta.imagen}`}
+                            src={`https://back-serious-game.vercel.app/src/uploads/${pregunta.imagen}`}
                             alt={pregunta.texto_pregunta}
                             className="pregunta-imagen"
                             style={{ maxWidth: "100px", maxHeight: "100px" }}
