@@ -30,7 +30,7 @@ function Login() {
     setError("");
     try {
       const response = await axios.post(
-        "https://backseriousgame.onrender.com/api/auth/login",
+        "http://localhost:4000/api/auth/login", // Cambiada a la API local
         { email, password }
       );
       console.log("Login successful:", response.data);

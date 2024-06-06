@@ -10,68 +10,122 @@ import {
   Col,
 } from "react-bootstrap";
 import axios from "axios";
-import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaSearch } from "react-icons/fa";
 import "./Conceptos.css";
 import Layout from "./Layout";
 import backgroundImage from "../img/ciencia.jpg"; // Ruta correcta a tu imagen
 
-const usePreguntas = () => {
-  const [preguntas, setPreguntas] = useState([]);
+const useEjercicios = () => {
+  const [ejercicios, setEjercicios] = useState([]);
 
   useEffect(() => {
-    fetchPreguntas();
+    fetchEjercicios();
   }, []);
 
-  const fetchPreguntas = async () => {
+  const fetchEjercicios = async () => {
     try {
       const response = await axios.get(
-        "https://backseriousgame.onrender.com/api/preguntas/obtener"
+        "http://localhost:4000/api/getejercicios"
       );
-      setPreguntas(response.data);
+      setEjercicios(response.data);
     } catch (error) {
-      console.error("Error al obtener preguntas:", error);
+      console.error("Error al obtener ejercicios:", error);
     }
   };
 
-  return { preguntas, fetchPreguntas };
+  const searchEjercicios = async (pregunta) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:4000/api/buscarejercicios?pregunta=${pregunta}`
+      );
+      setEjercicios(response.data);
+    } catch (error) {
+      console.error("Error al buscar ejercicios:", error);
+    }
+  };
+
+  return { ejercicios, fetchEjercicios, searchEjercicios };
 };
 
 const Ejercicios = () => {
-  const { preguntas, fetchPreguntas } = usePreguntas();
+  const [userData, setUserData] = useState({
+    nombre: "",
+    email: "",
+    rol: "",
+    fecha_registro: "",
+  });
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get(
+          "http://localhost:4000/api/auth/perfil",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setUserData(response.data);
+      } catch (error) {
+        console.error("Error al obtener los datos del usuario:", error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  const { ejercicios, fetchEjercicios, searchEjercicios } = useEjercicios();
+  const [tiposEjercicios, setTiposEjercicios] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [currentPregunta, setCurrentPregunta] = useState({
-    pregunta_id: null,
-    texto_pregunta: "",
+  const [currentEjercicio, setCurrentEjercicio] = useState({
+    ejercicio_id: null,
+    pregunta: "",
     imagen: null,
-    tipo_pregunta: "",
+    tipo_id: "",
     detalles: "",
+    mostrar_solucion: false,
     explicacion_solucion: "",
     opciones: [{ texto_opcion: "", es_correcta: false }],
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5; // Número de preguntas por página
+  const itemsPerPage = 5; // Número de ejercicios por página
+
+  useEffect(() => {
+    fetchTiposEjercicios();
+  }, []);
+
+  const fetchTiposEjercicios = async () => {
+    try {
+      const response = await axios.get("http://localhost:4000/api/tipos");
+      setTiposEjercicios(response.data);
+    } catch (error) {
+      console.error("Error al obtener los tipos de ejercicios:", error);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value, files, type } = e.target;
     if (type === "file") {
-      setCurrentPregunta({ ...currentPregunta, imagen: files[0] });
+      setCurrentEjercicio({ ...currentEjercicio, imagen: files[0] });
     } else {
-      setCurrentPregunta({ ...currentPregunta, [name]: value });
+      setCurrentEjercicio({ ...currentEjercicio, [name]: value });
     }
   };
 
   const handleOptionChange = (index, field, value) => {
-    const updatedOptions = currentPregunta.opciones.map((option, idx) =>
+    const updatedOptions = currentEjercicio.opciones.map((option, idx) =>
       idx === index ? { ...option, [field]: value } : option
     );
-    setCurrentPregunta({ ...currentPregunta, opciones: updatedOptions });
+    setCurrentEjercicio({ ...currentEjercicio, opciones: updatedOptions });
   };
 
   const addOption = () => {
-    setCurrentPregunta({
-      ...currentPregunta,
+    setCurrentEjercicio({
+      ...currentEjercicio,
       opciones: [
-        ...currentPregunta.opciones,
+        ...currentEjercicio.opciones,
         { texto_opcion: "", es_correcta: false },
       ],
     });
@@ -80,37 +134,38 @@ const Ejercicios = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const validOptions = currentPregunta.opciones.filter(
+    const validOptions = currentEjercicio.opciones.filter(
       (op) => op.texto_opcion.trim() !== ""
     );
-    if (validOptions.length !== currentPregunta.opciones.length) {
+    if (validOptions.length !== currentEjercicio.opciones.length) {
       alert("Todas las opciones deben tener texto antes de guardar.");
       return;
     }
 
     const formData = new FormData();
-    formData.append("texto_pregunta", currentPregunta.texto_pregunta);
-    formData.append("tipo_pregunta", currentPregunta.tipo_pregunta);
-    formData.append("detalles", currentPregunta.detalles);
+    formData.append("pregunta", currentEjercicio.pregunta);
+    formData.append("tipo_id", currentEjercicio.tipo_id);
+    formData.append("detalles", currentEjercicio.detalles);
+    formData.append("mostrar_solucion", currentEjercicio.mostrar_solucion);
     formData.append(
       "explicacion_solucion",
-      currentPregunta.explicacion_solucion
+      currentEjercicio.explicacion_solucion
     );
     formData.append("opciones", JSON.stringify(validOptions));
 
-    if (currentPregunta.imagen && currentPregunta.imagen instanceof File) {
+    if (currentEjercicio.imagen && currentEjercicio.imagen instanceof File) {
       formData.append(
         "imagen",
-        currentPregunta.imagen,
-        currentPregunta.imagen.name
+        currentEjercicio.imagen,
+        currentEjercicio.imagen.name
       );
     }
 
     try {
-      const method = currentPregunta.pregunta_id ? "put" : "post";
-      const url = currentPregunta.pregunta_id
-        ? `https://backseriousgame.onrender.com/api/preguntas/${currentPregunta.pregunta_id}`
-        : "https://backseriousgame.onrender.com/api/preguntas";
+      const method = currentEjercicio.ejercicio_id ? "put" : "post";
+      const url = currentEjercicio.ejercicio_id
+        ? `http://localhost:4000/api/ejercicios/${currentEjercicio.ejercicio_id}`
+        : "http://localhost:4000/api/ejercicios";
 
       await axios({
         method: method,
@@ -120,32 +175,41 @@ const Ejercicios = () => {
       });
 
       setShowModal(false);
-      fetchPreguntas();
+      fetchEjercicios();
     } catch (error) {
       console.error(
-        "Error al guardar la pregunta:",
+        "Error al guardar el ejercicio:",
         error.response?.data || error.message
       );
     }
   };
 
-  const handleDelete = async (preguntaId) => {
-    if (window.confirm("¿Estás seguro de que deseas eliminar esta pregunta?")) {
+  const handleDelete = async (ejercicioId) => {
+    if (
+      window.confirm("¿Estás seguro de que deseas eliminar este ejercicio?")
+    ) {
       try {
         await axios.delete(
-          `https://backseriousgame.onrender.com/api/preguntas/${preguntaId}`
+          `http://localhost:4000/api/ejercicios/${ejercicioId}`
         );
-        fetchPreguntas();
+        fetchEjercicios();
       } catch (error) {
-        console.error("Error al eliminar la pregunta:", error);
+        console.error("Error al eliminar el ejercicio:", error);
       }
     }
   };
 
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const pregunta = form.elements["search_pregunta"].value;
+    await searchEjercicios(pregunta);
+  };
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = preguntas.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(preguntas.length / itemsPerPage);
+  const currentItems = ejercicios.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(ejercicios.length / itemsPerPage);
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -165,7 +229,7 @@ const Ejercicios = () => {
   }
 
   return (
-    <Layout pageTitle="Gestión de Evaluaciones">
+    <Layout pageTitle="Gestión de Ejercicios">
       <Container
         fluid
         className="p-4 d-flex flex-column align-items-center justify-content-start"
@@ -181,19 +245,37 @@ const Ejercicios = () => {
         <div
           style={{
             backgroundColor: "rgba(255, 255, 255, 0.9)",
-            padding: "20px",
+            padding: "15px",
             borderRadius: "15px",
             boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
             maxWidth: "1200px",
             width: "100%",
             marginBottom: "20px",
             textAlign: "center",
-            fontSize: "2rem",
+            fontSize: "1.5rem",
             fontWeight: "bold",
           }}
         >
           Panel de Administración de Ejercicios
         </div>
+
+        <Form
+          onSubmit={handleSearch}
+          className="d-flex justify-content-between mb-3 w-100 search-form"
+          style={{ maxWidth: "1200px" }}
+        >
+          <Form.Control
+            type="text"
+            name="search_pregunta"
+            placeholder="Buscar por pregunta"
+            className="me-2"
+            style={{ flex: "1" }}
+          />
+          <Button type="submit" variant="primary">
+            <FaSearch /> Buscar
+          </Button>
+        </Form>
+
         <div
           className="custom-container"
           style={{
@@ -213,19 +295,20 @@ const Ejercicios = () => {
                 variant="primary"
                 className="mb-2 add-button float-end"
                 onClick={() => {
-                  setCurrentPregunta({
-                    pregunta_id: null,
-                    texto_pregunta: "",
+                  setCurrentEjercicio({
+                    ejercicio_id: null,
+                    pregunta: "",
                     imagen: null,
-                    tipo_pregunta: "",
+                    tipo_id: "",
                     detalles: "",
+                    mostrar_solucion: false,
                     explicacion_solucion: "",
                     opciones: [{ texto_opcion: "", es_correcta: false }],
                   });
                   setShowModal(true);
                 }}
               >
-                <FaPlus /> Agregar Pregunta
+                <FaPlus /> Agregar Ejercicio
               </Button>
 
               <Modal
@@ -235,21 +318,21 @@ const Ejercicios = () => {
               >
                 <Modal.Header closeButton>
                   <Modal.Title>
-                    {currentPregunta.pregunta_id ? "Editar" : "Agregar"}{" "}
-                    Pregunta
+                    {currentEjercicio.ejercicio_id ? "Editar" : "Agregar"}{" "}
+                    Ejercicio
                   </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                   <Form onSubmit={handleSubmit}>
                     <Form.Group className="mb-3">
-                      <Form.Label>Texto de la Pregunta</Form.Label>
+                      <Form.Label>Pregunta</Form.Label>
                       <Form.Control
                         type="text"
-                        name="texto_pregunta"
+                        name="pregunta"
                         required
-                        value={currentPregunta.texto_pregunta}
+                        value={currentEjercicio.pregunta}
                         onChange={handleInputChange}
-                        placeholder="Escribe el texto de la pregunta"
+                        placeholder="Escribe la pregunta"
                       />
                     </Form.Group>
                     <Form.Group className="mb-3">
@@ -257,15 +340,21 @@ const Ejercicios = () => {
                       <Form.Control type="file" onChange={handleInputChange} />
                     </Form.Group>
                     <Form.Group className="mb-3">
-                      <Form.Label>Tipo de Pregunta</Form.Label>
+                      <Form.Label>Tipo de Ejercicio</Form.Label>
                       <Form.Control
-                        type="text"
-                        name="tipo_pregunta"
+                        as="select"
+                        name="tipo_id"
                         required
-                        value={currentPregunta.tipo_pregunta}
+                        value={currentEjercicio.tipo_id}
                         onChange={handleInputChange}
-                        placeholder="Tipo de la pregunta"
-                      />
+                      >
+                        <option value="">Seleccionar tipo</option>
+                        {tiposEjercicios.map((tipo) => (
+                          <option key={tipo.tipo_id} value={tipo.tipo_id}>
+                            {tipo.nombre_tipo}
+                          </option>
+                        ))}
+                      </Form.Control>
                     </Form.Group>
                     <Form.Group className="mb-3">
                       <Form.Label>Detalles</Form.Label>
@@ -273,9 +362,23 @@ const Ejercicios = () => {
                         type="text"
                         name="detalles"
                         required
-                        value={currentPregunta.detalles}
+                        value={currentEjercicio.detalles}
                         onChange={handleInputChange}
                         placeholder="Detalles adicionales"
+                      />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                      <Form.Check
+                        type="checkbox"
+                        label="Mostrar Solución"
+                        name="mostrar_solucion"
+                        checked={currentEjercicio.mostrar_solucion}
+                        onChange={(e) =>
+                          setCurrentEjercicio({
+                            ...currentEjercicio,
+                            mostrar_solucion: e.target.checked,
+                          })
+                        }
                       />
                     </Form.Group>
                     <Form.Group className="mb-3">
@@ -284,12 +387,12 @@ const Ejercicios = () => {
                         type="text"
                         name="explicacion_solucion"
                         required
-                        value={currentPregunta.explicacion_solucion}
+                        value={currentEjercicio.explicacion_solucion}
                         onChange={handleInputChange}
                         placeholder="Explica la solución"
                       />
                     </Form.Group>
-                    {currentPregunta.opciones.map((opcion, index) => (
+                    {currentEjercicio.opciones.map((opcion, index) => (
                       <div key={index} className="mb-3">
                         <Form.Label>Opciones</Form.Label>
                         <div className="option-group">
@@ -348,32 +451,35 @@ const Ejercicios = () => {
                     <th>ID</th>
                     <th>Pregunta</th>
                     <th>Imagen</th>
-                    <th>Tipo de Pregunta</th>
+                    <th>Tipo de Ejercicio</th>
                     <th>Detalles</th>
+                    <th>Mostrar Solución</th>
                     <th>Explicación Solución</th>
                     <th>Opciones</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {currentItems.map((pregunta) => (
-                    <tr key={pregunta.pregunta_id}>
-                      <td>{pregunta.pregunta_id}</td>
-                      <td>{pregunta.texto_pregunta}</td>
+                  {currentItems.map((ejercicio) => (
+                    <tr key={ejercicio.ejercicio_id}>
+                      <td>{ejercicio.ejercicio_id}</td>
+                      <td>{ejercicio.pregunta}</td>
                       <td>
-                        {pregunta.imagen && (
+                        {ejercicio.imagen && (
                           <img
-                            src={`https://backseriousgame.onrender.com/src/uploads/${pregunta.imagen}`}
-                            alt={`https://backseriousgame.onrender.com/${pregunta.imagen}`}
+                            src={`http://localhost:4000/src/uploads/${ejercicio.imagen}`}
+                            alt={`http://localhost:4000/${ejercicio.imagen}`}
                             className="pregunta-imagen"
+                            style={{ maxWidth: "100px", maxHeight: "100px" }}
                           />
                         )}
                       </td>
-                      <td>{pregunta.tipo_pregunta}</td>
-                      <td>{pregunta.detalles}</td>
-                      <td>{pregunta.explicacion_solucion}</td>
+                      <td>{ejercicio.nombre_tipo}</td>
+                      <td>{ejercicio.detalles}</td>
+                      <td>{ejercicio.mostrar_solucion ? "Sí" : "No"}</td>
+                      <td>{ejercicio.explicacion_solucion}</td>
                       <td>
-                        {pregunta.opciones.map((opc, idx) => (
+                        {ejercicio.opciones_multiples?.map((opc, idx) => (
                           <div key={idx}>
                             {opc.texto_opcion} (
                             {opc.es_correcta ? "Correcta" : "Incorrecta"})
@@ -385,7 +491,10 @@ const Ejercicios = () => {
                           <Button
                             variant="warning"
                             onClick={() => {
-                              setCurrentPregunta({ ...pregunta });
+                              setCurrentEjercicio({
+                                ...ejercicio,
+                                opciones: ejercicio.opciones_multiples,
+                              });
                               setShowModal(true);
                             }}
                             className="me-2"
@@ -394,7 +503,7 @@ const Ejercicios = () => {
                           </Button>
                           <Button
                             variant="danger"
-                            onClick={() => handleDelete(pregunta.pregunta_id)}
+                            onClick={() => handleDelete(ejercicio.ejercicio_id)}
                           >
                             <FaTrash />
                           </Button>

@@ -6,6 +6,8 @@ import {
   Form,
   Pagination,
   Container,
+  Row,
+  Col,
 } from "react-bootstrap";
 import axios from "axios";
 import { FaEdit, FaTrash, FaPlus, FaSearch } from "react-icons/fa";
@@ -24,6 +26,7 @@ const Usuarios = () => {
   const [error, setError] = useState("");
   const [modalType, setModalType] = useState("edit");
   const [search, setSearch] = useState("");
+  const [searchRol, setSearchRol] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -31,12 +34,12 @@ const Usuarios = () => {
     fetchUsers();
   }, []);
 
-  const fetchUsers = async (searchQuery = "") => {
+  const fetchUsers = async (searchQuery = "", searchRol = "") => {
     try {
       const response = await axios.get(
-        "https://backseriousgame.onrender.com/api/getusers",
+        "http://localhost:4000/api/searchusers",
         {
-          params: { nombre: searchQuery, rol: searchQuery },
+          params: { nombre: searchQuery, rol: searchRol },
         }
       );
       setUsers(response.data);
@@ -54,9 +57,7 @@ const Usuarios = () => {
   const handleDelete = async (userId) => {
     if (window.confirm("¿Estás seguro de que deseas eliminar este usuario?")) {
       try {
-        await axios.delete(
-          `https://backseriousgame.onrender.com/api/deleteusers/${userId}`
-        );
+        await axios.delete(`http://localhost:4000/api/deleteusers/${userId}`);
         fetchUsers();
       } catch (error) {
         console.error("Error al eliminar el usuario:", error);
@@ -70,14 +71,11 @@ const Usuarios = () => {
     try {
       if (modalType === "edit") {
         await axios.put(
-          `https://backseriousgame.onrender.com/api/putusers/${currentUser.usuario_id}`,
+          `http://localhost:4000/api/putusers/${currentUser.usuario_id}`,
           currentUser
         );
       } else {
-        await axios.post(
-          "https://backseriousgame.onrender.com/api/auth/signup",
-          currentUser
-        );
+        await axios.post("http://localhost:4000/api/auth/signup", currentUser);
       }
       setShowModal(false);
       fetchUsers();
@@ -91,7 +89,7 @@ const Usuarios = () => {
 
   const handleSearch = (event) => {
     event.preventDefault();
-    fetchUsers(search);
+    fetchUsers(search, searchRol);
   };
 
   const handlePageChange = (pageNumber) => {
@@ -107,210 +105,240 @@ const Usuarios = () => {
     <Layout pageTitle="Administración de Usuarios">
       <Container
         fluid
-        className="p-4 d-flex flex-column align-items-center justify-content-start"
+        className="p-4"
         style={{
           minHeight: "100vh",
           backgroundImage: `url(${backgroundImage})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
-          paddingTop: "30px", // Agregar padding superior para mover contenido hacia arriba
-          overflowY: "auto", // Permitir desplazamiento vertical
+          paddingTop: "30px",
+          overflowY: "auto",
         }}
       >
-        <div
-          style={{
-            backgroundColor: "rgba(255, 255, 255, 0.9)",
-            padding: "20px",
-            borderRadius: "15px",
-            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-            maxWidth: "1200px",
-            width: "100%",
-            marginBottom: "20px", // Margin bottom for spacing
-            textAlign: "center",
-            fontSize: "2rem",
-            fontWeight: "bold",
-          }}
-        >
-          Administración de Usuarios
-        </div>
-        <div
-          className="w-100"
-          style={{
-            backgroundColor: "rgba(255, 255, 255, 0.9)",
-            padding: "20px",
-            borderRadius: "15px",
-            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-            maxWidth: "1200px",
-            maxHeight: "60vh", // Limitar la altura máxima de la tarjeta
-            overflowY: "auto", // Permitir desplazamiento dentro de la tarjeta si es necesario
-          }}
-        >
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <Form onSubmit={handleSearch} className="d-flex align-items-center">
-              <Form.Control
-                type="text"
-                placeholder="Buscar por nombre o rol"
-                className="mr-sm-2"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              <Button variant="outline-primary" type="submit">
-                <FaSearch />
-              </Button>
-            </Form>
-            <Button
-              variant="primary"
-              onClick={() =>
-                handleShowModal(
-                  { nombre: "", email: "", rol: "", password: "" },
-                  "add"
-                )
-              }
+        <Row className="justify-content-md-center">
+          <Col xs={12} className="text-center mb-4">
+            <div
+              style={{
+                backgroundColor: "rgba(255, 255, 255, 0.9)",
+                padding: "20px 40px",
+                borderRadius: "15px",
+                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                fontSize: "2rem",
+                fontWeight: "bold",
+              }}
             >
-              <FaPlus /> Agregar Usuario
-            </Button>
-          </div>
-          <div className="table-responsive custom-table-container">
-            <Table striped bordered hover className="mb-3">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Nombre</th>
-                  <th>Email</th>
-                  <th>Rol</th>
-                  <th>Fecha de Registro</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentItems.map((user) => (
-                  <tr key={user.usuario_id}>
-                    <td>{user.usuario_id}</td>
-                    <td>{user.nombre}</td>
-                    <td>{user.email}</td>
-                    <td>{user.rol}</td>
-                    <td>
-                      {new Date(user.fecha_registro).toLocaleDateString()}
-                    </td>
-                    <td>
-                      <Button
-                        variant="warning"
-                        onClick={() => handleShowModal(user, "edit")}
-                        className="me-2"
-                      >
-                        <FaEdit />
-                      </Button>
-                      <Button
-                        variant="danger"
-                        onClick={() => handleDelete(user.usuario_id)}
-                      >
-                        <FaTrash />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-            <Pagination className="d-flex justify-content-center">
-              <Pagination.First
-                onClick={() => handlePageChange(1)}
-                disabled={currentPage === 1}
-              />
-              <Pagination.Prev
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-              />
-              {[...Array(totalPages)].map((_, index) => (
-                <Pagination.Item
-                  key={index + 1}
-                  active={index + 1 === currentPage}
-                  onClick={() => handlePageChange(index + 1)}
-                >
-                  {index + 1}
-                </Pagination.Item>
-              ))}
-              <Pagination.Next
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              />
-              <Pagination.Last
-                onClick={() => handlePageChange(totalPages)}
-                disabled={currentPage === totalPages}
-              />
-            </Pagination>
-          </div>
-
-          <Modal show={showModal} onHide={() => setShowModal(false)}>
-            <Modal.Header closeButton>
-              <Modal.Title>
-                {modalType === "edit" ? "Editar Usuario" : "Agregar Usuario"}
-              </Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              {error && <p style={{ color: "red" }}>{error}</p>}
-              <Form onSubmit={handleSave}>
-                <Form.Group controlId="formNombre">
-                  <Form.Label>Nombre</Form.Label>
+              Administración de Usuarios
+            </div>
+          </Col>
+          <Col xs={12}>
+            <Form onSubmit={handleSearch} className="mb-3">
+              <Row>
+                <Col md={5}>
                   <Form.Control
                     type="text"
-                    value={currentUser?.nombre || ""}
-                    onChange={(e) =>
-                      setCurrentUser({ ...currentUser, nombre: e.target.value })
-                    }
-                    required
+                    placeholder="Buscar por nombre"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
                   />
-                </Form.Group>
-                <Form.Group controlId="formEmail" className="mt-3">
-                  <Form.Label>Email</Form.Label>
+                </Col>
+                <Col md={5}>
                   <Form.Control
-                    type="email"
-                    value={currentUser?.email || ""}
-                    onChange={(e) =>
-                      setCurrentUser({ ...currentUser, email: e.target.value })
-                    }
-                    required
-                  />
-                </Form.Group>
-                <Form.Group controlId="formRol" className="mt-3">
-                  <Form.Label>Rol</Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={currentUser?.rol || ""}
-                    onChange={(e) =>
-                      setCurrentUser({ ...currentUser, rol: e.target.value })
-                    }
-                    required
-                  />
-                </Form.Group>
-                <Form.Group controlId="formPassword" className="mt-3">
-                  <Form.Label>Contraseña</Form.Label>
-                  <Form.Control
-                    type="password"
-                    value={currentUser?.password || ""}
-                    onChange={(e) =>
-                      setCurrentUser({
-                        ...currentUser,
-                        password: e.target.value,
-                      })
-                    }
-                    required={modalType === "add"}
-                  />
-                </Form.Group>
-                <Modal.Footer>
-                  <Button
-                    variant="secondary"
-                    onClick={() => setShowModal(false)}
+                    as="select"
+                    value={searchRol}
+                    onChange={(e) => setSearchRol(e.target.value)}
                   >
-                    Cancelar
+                    <option value="">Seleccionar rol</option>
+                    <option value="administrador">Administrador</option>
+                    <option value="docente">Docente</option>
+                  </Form.Control>
+                </Col>
+                <Col md={2}>
+                  <Button type="submit" variant="primary">
+                    <FaSearch />
                   </Button>
-                  <Button variant="primary" type="submit">
-                    Guardar
-                  </Button>
-                </Modal.Footer>
-              </Form>
-            </Modal.Body>
-          </Modal>
-        </div>
+                </Col>
+              </Row>
+            </Form>
+            <div
+              style={{
+                backgroundColor: "rgba(255, 255, 255, 0.7)",
+                padding: "20px",
+                borderRadius: "15px",
+                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                overflowY: "auto",
+                maxHeight: "500px",
+              }}
+            >
+              <Button
+                variant="primary"
+                onClick={() =>
+                  handleShowModal(
+                    { nombre: "", email: "", rol: "", password: "" },
+                    "add"
+                  )
+                }
+                className="mb-3 float-end"
+              >
+                <FaPlus /> Agregar Usuario
+              </Button>
+              <div className="table-responsive custom-table-container">
+                <Table striped bordered hover>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Nombre</th>
+                      <th>Email</th>
+                      <th>Rol</th>
+                      <th>Fecha de Registro</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentItems.map((user, index) => (
+                      <tr key={user.usuario_id}>
+                        <td>{index + 1 + (currentPage - 1) * itemsPerPage}</td>
+                        <td>{user.nombre}</td>
+                        <td>{user.email}</td>
+                        <td>{user.rol}</td>
+                        <td>
+                          {new Date(user.fecha_registro).toLocaleDateString()}
+                        </td>
+                        <td>
+                          <div className="action-buttons">
+                            <Button
+                              variant="warning"
+                              onClick={() => handleShowModal(user, "edit")}
+                              className="me-2"
+                            >
+                              <FaEdit />
+                            </Button>
+                            <Button
+                              variant="danger"
+                              onClick={() => handleDelete(user.usuario_id)}
+                            >
+                              <FaTrash />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
+              <Pagination className="d-flex justify-content-center">
+                <Pagination.First
+                  onClick={() => handlePageChange(1)}
+                  disabled={currentPage === 1}
+                />
+                <Pagination.Prev
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                />
+                {[...Array(totalPages)].map((_, index) => (
+                  <Pagination.Item
+                    key={index + 1}
+                    active={index + 1 === currentPage}
+                    onClick={() => handlePageChange(index + 1)}
+                  >
+                    {index + 1}
+                  </Pagination.Item>
+                ))}
+                <Pagination.Next
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                />
+                <Pagination.Last
+                  onClick={() => handlePageChange(totalPages)}
+                  disabled={currentPage === totalPages}
+                />
+              </Pagination>
+            </div>
+
+            <Modal show={showModal} onHide={() => setShowModal(false)}>
+              <Modal.Header closeButton>
+                <Modal.Title>
+                  {modalType === "edit" ? "Editar Usuario" : "Agregar Usuario"}
+                </Modal.Title>
+              </Modal.Header>
+              <Modal.Body>
+                {error && <p style={{ color: "red" }}>{error}</p>}
+                <Form onSubmit={handleSave}>
+                  <Form.Group controlId="formNombre">
+                    <Form.Label>Nombre</Form.Label>
+                    <Form.Control
+                      type="text"
+                      value={currentUser?.nombre || ""}
+                      onChange={(e) =>
+                        setCurrentUser({
+                          ...currentUser,
+                          nombre: e.target.value,
+                        })
+                      }
+                      required
+                    />
+                  </Form.Group>
+                  <Form.Group controlId="formEmail" className="mt-3">
+                    <Form.Label>Email</Form.Label>
+                    <Form.Control
+                      type="email"
+                      value={currentUser?.email || ""}
+                      onChange={(e) =>
+                        setCurrentUser({
+                          ...currentUser,
+                          email: e.target.value,
+                        })
+                      }
+                      required
+                    />
+                  </Form.Group>
+                  <Form.Group controlId="formRol" className="mt-3">
+                    <Form.Label>Rol</Form.Label>
+                    <Form.Control
+                      as="select"
+                      value={currentUser?.rol || ""}
+                      onChange={(e) =>
+                        setCurrentUser({
+                          ...currentUser,
+                          rol: e.target.value,
+                        })
+                      }
+                      required
+                    >
+                      <option value="">Seleccionar rol</option>
+                      <option value="administrador">Administrador</option>
+                      <option value="docente">Docente</option>
+                    </Form.Control>
+                  </Form.Group>
+                  <Form.Group controlId="formPassword" className="mt-3">
+                    <Form.Label>Contraseña</Form.Label>
+                    <Form.Control
+                      type="password"
+                      value={currentUser?.password || ""}
+                      onChange={(e) =>
+                        setCurrentUser({
+                          ...currentUser,
+                          password: e.target.value,
+                        })
+                      }
+                      required={modalType === "add"}
+                    />
+                  </Form.Group>
+                  <Modal.Footer>
+                    <Button
+                      variant="secondary"
+                      onClick={() => setShowModal(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button variant="primary" type="submit">
+                      Guardar
+                    </Button>
+                  </Modal.Footer>
+                </Form>
+              </Modal.Body>
+            </Modal>
+          </Col>
+        </Row>
       </Container>
     </Layout>
   );

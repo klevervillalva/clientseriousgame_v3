@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Card, Button } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import axios from "axios";
 import LateralNavbar from "./NavbarLateral";
 import TopNavbar from "./TopNavbar";
 import conceptos from "../Assets/img/conceptos.png";
@@ -10,6 +11,35 @@ import backgroundImage from "../img/ciencia.jpg";
 import "./Principal.css";
 
 const Principal = () => {
+  const [userData, setUserData] = useState({
+    nombre: "",
+    email: "",
+    rol: "",
+    fecha_registro: "",
+  });
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get(
+          "http://localhost:4000/api/auth/perfil",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setUserData(response.data);
+      } catch (error) {
+        console.error("Error al obtener los datos del usuario:", error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  console.log(userData);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const username = "Klever Villalva";
 
@@ -38,9 +68,7 @@ const Principal = () => {
           fluid
           className="d-flex flex-column align-items-center justify-content-start main-container"
         >
-          <div className="title-card">
-            Panel de Administración
-          </div>
+          <div className="title-card">Panel de Administración</div>
           <Container className="mt-4 cards-container">
             <Row className="g-4 justify-content-center">
               <Col xs={12} sm={6} md={4} lg={3}>

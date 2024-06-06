@@ -10,22 +10,27 @@ import {
   Col,
 } from "react-bootstrap";
 import axios from "axios";
-import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaSearch } from "react-icons/fa";
 import "./Conceptos.css";
 import Layout from "./Layout"; // Asumiendo que Layout ya tiene NavbarLateral y TopNavbar
 import backgroundImage from "../img/ciencia.jpg"; // Ruta a tu imagen de fondo
 
 const usePreguntas = () => {
   const [preguntas, setPreguntas] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchPreguntas();
-  }, []);
+  }, [searchQuery]);
 
   const fetchPreguntas = async () => {
     try {
       const response = await axios.get(
-        "https://backseriousgame.onrender.com/api/preguntas/obtener"
+        searchQuery
+          ? `http://localhost:4000/api/search/${encodeURIComponent(
+              searchQuery
+            )}`
+          : "http://localhost:4000/api/preguntas/obtener"
       );
       setPreguntas(response.data);
     } catch (error) {
@@ -33,17 +38,17 @@ const usePreguntas = () => {
     }
   };
 
-  return { preguntas, fetchPreguntas };
+  return { preguntas, fetchPreguntas, setSearchQuery };
 };
 
 const Evaluacion = () => {
-  const { preguntas, fetchPreguntas } = usePreguntas();
+  const { preguntas, fetchPreguntas, setSearchQuery } = usePreguntas();
   const [showModal, setShowModal] = useState(false);
   const [currentPregunta, setCurrentPregunta] = useState({
     pregunta_id: null,
     texto_pregunta: "",
     imagen: null,
-    tipo_pregunta: "",
+    tipo_pregunta: "Selección Múltiple", // Valor predeterminado
     detalles: "",
     explicacion_solucion: "",
     opciones: [{ texto_opcion: "", es_correcta: false }],
@@ -91,7 +96,7 @@ const Evaluacion = () => {
 
     const formData = new FormData();
     formData.append("texto_pregunta", currentPregunta.texto_pregunta);
-    formData.append("tipo_pregunta", currentPregunta.tipo_pregunta);
+    formData.append("tipo_pregunta", "Selección Múltiple"); // Asegurar siempre "Selección Múltiple"
     formData.append("detalles", currentPregunta.detalles);
     formData.append(
       "explicacion_solucion",
@@ -110,8 +115,8 @@ const Evaluacion = () => {
     try {
       const method = currentPregunta.pregunta_id ? "put" : "post";
       const url = currentPregunta.pregunta_id
-        ? `https://backseriousgame.onrender.com/api/preguntas/${currentPregunta.pregunta_id}`
-        : "https://backseriousgame.onrender.com/api/preguntas";
+        ? `http://localhost:4000/api/preguntas/${currentPregunta.pregunta_id}`
+        : "http://localhost:4000/api/preguntas";
 
       await axios({
         method: method,
@@ -133,14 +138,19 @@ const Evaluacion = () => {
   const handleDelete = async (preguntaId) => {
     if (window.confirm("¿Estás seguro de que deseas eliminar esta pregunta?")) {
       try {
-        await axios.delete(
-          `https://backseriousgame.onrender.com/api/preguntas/${preguntaId}`
-        );
+        await axios.delete(`http://localhost:4000/api/preguntas/${preguntaId}`);
         fetchPreguntas();
       } catch (error) {
         console.error("Error al eliminar la pregunta:", error);
       }
     }
+  };
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const pregunta = form.elements["search_pregunta"].value;
+    setSearchQuery(pregunta);
   };
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -175,26 +185,44 @@ const Evaluacion = () => {
           backgroundImage: `url(${backgroundImage})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
+          paddingTop: "30px", // Agregar padding superior para mover contenido hacia arriba
           overflowY: "auto", // Permitir desplazamiento vertical
         }}
       >
         <div
           style={{
             backgroundColor: "rgba(255, 255, 255, 0.9)",
-            padding: "20px",
+            padding: "15px",
             borderRadius: "15px",
             boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
             maxWidth: "1200px",
             width: "100%",
             marginBottom: "20px",
             textAlign: "center",
-            fontSize: "2rem",
+            fontSize: "1.5rem",
             fontWeight: "bold",
-            marginTop: "10px", // Reduce el margen superior
           }}
         >
           Panel de Administración de Evaluación
         </div>
+
+        <Form
+          onSubmit={handleSearch}
+          className="d-flex justify-content-between mb-3 w-100 search-form"
+          style={{ maxWidth: "1200px" }}
+        >
+          <Form.Control
+            type="text"
+            name="search_pregunta"
+            placeholder="Buscar por pregunta"
+            className="me-2"
+            style={{ flex: "1" }}
+          />
+          <Button type="submit" variant="primary">
+            <FaSearch /> Buscar
+          </Button>
+        </Form>
+
         <div
           className="custom-container"
           style={{
@@ -204,6 +232,8 @@ const Evaluacion = () => {
             boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
             width: "100%",
             maxWidth: "1200px",
+            overflowY: "auto", // Permitir desplazamiento vertical en el contenedor
+            maxHeight: "500px", // Ajustar esta altura según tus necesidades
           }}
         >
           <Row className="justify-content-md-center">
@@ -216,7 +246,7 @@ const Evaluacion = () => {
                     pregunta_id: null,
                     texto_pregunta: "",
                     imagen: null,
-                    tipo_pregunta: "",
+                    tipo_pregunta: "Selección Múltiple", // Valor predeterminado
                     detalles: "",
                     explicacion_solucion: "",
                     opciones: [{ texto_opcion: "", es_correcta: false }],
@@ -227,99 +257,15 @@ const Evaluacion = () => {
                 <FaPlus /> Agregar Pregunta
               </Button>
 
-              <div className="table-responsive custom-table-container mt-3">
-                <Table striped bordered hover>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Pregunta</th>
-                      <th>Imagen</th>
-                      <th>Tipo de Pregunta</th>
-                      <th>Detalles</th>
-                      <th>Explicación Solución</th>
-                      <th>Opciones</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentItems.map((pregunta) => (
-                      <tr key={pregunta.pregunta_id}>
-                        <td>{pregunta.pregunta_id}</td>
-                        <td>{pregunta.texto_pregunta}</td>
-                        <td>
-                          {pregunta.imagen && (
-                            <img
-                              src={`https://backseriousgame.onrender.com/src/uploads/${pregunta.imagen}`}
-                              alt={pregunta.texto_pregunta}
-                              className="pregunta-imagen"
-                            />
-                          )}
-                        </td>
-                        <td>{pregunta.tipo_pregunta}</td>
-                        <td>{pregunta.detalles}</td>
-                        <td>{pregunta.explicacion_solucion}</td>
-                        <td>
-                          {pregunta.opciones.map((opc, idx) => (
-                            <div key={idx}>
-                              {opc.texto_opcion} (
-                              {opc.es_correcta ? "Correcta" : "Incorrecta"})
-                            </div>
-                          ))}
-                        </td>
-                        <td>
-                          <div className="action-buttons">
-                            <Button
-                              variant="warning"
-                              onClick={() => {
-                                setCurrentPregunta({ ...pregunta });
-                                setShowModal(true);
-                              }}
-                              className="me-2"
-                            >
-                              <FaEdit />
-                            </Button>
-                            <Button
-                              variant="danger"
-                              onClick={() => handleDelete(pregunta.pregunta_id)}
-                            >
-                              <FaTrash />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-
-              <div className="d-flex justify-content-center">
-                <Pagination className="mt-3">
-                  <Pagination.First
-                    onClick={() => handlePageChange(1)}
-                    disabled={currentPage === 1}
-                  />
-                  <Pagination.Prev
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  />
-                  {paginationItems}
-                  <Pagination.Next
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  />
-                  <Pagination.Last
-                    onClick={() => handlePageChange(totalPages)}
-                    disabled={currentPage === totalPages}
-                  />
-                </Pagination>
-              </div>
-
-              <Modal show={showModal} onHide={() => setShowModal(false)}>
+              <Modal
+                show={showModal}
+                onHide={() => setShowModal(false)}
+                size="md"
+              >
                 <Modal.Header closeButton>
                   <Modal.Title>
-                    {currentPregunta.pregunta_id
-                      ? "Editar Pregunta"
-                      : "Nueva Pregunta"}
+                    {currentPregunta.pregunta_id ? "Editar" : "Agregar"}{" "}
+                    Pregunta
                   </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
@@ -332,6 +278,7 @@ const Evaluacion = () => {
                         name="texto_pregunta"
                         value={currentPregunta.texto_pregunta}
                         onChange={handleInputChange}
+                        placeholder="Escribe la pregunta"
                       />
                     </Form.Group>
                     <Form.Group className="mb-3">
@@ -346,6 +293,7 @@ const Evaluacion = () => {
                         name="tipo_pregunta"
                         value={currentPregunta.tipo_pregunta}
                         onChange={handleInputChange}
+                        readOnly // Deshabilitar edición
                       />
                     </Form.Group>
                     <Form.Group className="mb-3">
@@ -414,6 +362,100 @@ const Evaluacion = () => {
                   </Form>
                 </Modal.Body>
               </Modal>
+
+              <Table
+                striped
+                bordered
+                hover
+                responsive
+                className="mt-2 table-responsive"
+              >
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Pregunta</th>
+                    <th>Imagen</th>
+                    <th>Tipo de Pregunta</th>
+                    <th>Detalles</th>
+                    <th>Explicación Solución</th>
+                    <th>Opciones</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentItems.map((pregunta) => (
+                    <tr key={pregunta.pregunta_id}>
+                      <td>{pregunta.pregunta_id}</td>
+                      <td>{pregunta.texto_pregunta}</td>
+                      <td>
+                        {pregunta.imagen && (
+                          <img
+                            src={`https://backseriousgame.onrender.com/src/uploads/${pregunta.imagen}`}
+                            alt={pregunta.texto_pregunta}
+                            className="pregunta-imagen"
+                            style={{ maxWidth: "100px", maxHeight: "100px" }}
+                          />
+                        )}
+                      </td>
+                      <td>{pregunta.tipo_pregunta}</td>
+                      <td>{pregunta.detalles}</td>
+                      <td>{pregunta.explicacion_solucion}</td>
+                      <td>
+                        {pregunta.opciones.map((opc, idx) => (
+                          <div key={idx}>
+                            {opc.texto_opcion} (
+                            {opc.es_correcta ? "Correcta" : "Incorrecta"})
+                          </div>
+                        ))}
+                      </td>
+                      <td>
+                        <div className="action-buttons">
+                          <Button
+                            variant="warning"
+                            onClick={() => {
+                              setCurrentPregunta({
+                                ...pregunta,
+                                tipo_pregunta: "Selección Múltiple", // Asegurar que siempre sea "Selección Múltiple"
+                              });
+                              setShowModal(true);
+                            }}
+                            className="me-2"
+                          >
+                            <FaEdit />
+                          </Button>
+                          <Button
+                            variant="danger"
+                            onClick={() => handleDelete(pregunta.pregunta_id)}
+                          >
+                            <FaTrash />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+              <div className="d-flex justify-content-center">
+                <Pagination>
+                  <Pagination.First
+                    onClick={() => handlePageChange(1)}
+                    disabled={currentPage === 1}
+                  />
+                  <Pagination.Prev
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  />
+                  {paginationItems}
+                  <Pagination.Next
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  />
+                  <Pagination.Last
+                    onClick={() => handlePageChange(totalPages)}
+                    disabled={currentPage === totalPages}
+                  />
+                </Pagination>
+              </div>
             </Col>
           </Row>
         </div>

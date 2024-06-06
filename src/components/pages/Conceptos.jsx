@@ -11,8 +11,8 @@ import {
 } from "react-bootstrap";
 import axios from "axios";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
-import Layout from "./Layout"; // Asegúrate de tener el Layout importado
-import backgroundImage from "../img/ciencia.jpg"; // Ruta correcta a tu imagen
+import Layout from "./Layout";
+import backgroundImage from "../img/ciencia.jpg";
 import "./Conceptos.css";
 
 const Conceptos = () => {
@@ -44,40 +44,60 @@ const Conceptos = () => {
     fetchUserData();
   }, []);
 
-  console.log(userData);
-
   const [conceptos, setConceptos] = useState([]);
+  const [categorias, setCategorias] = useState([]);
   const [show, setShow] = useState(false);
   const [currentConcepto, setCurrentConcepto] = useState({
     titulo: "",
     descripcion: "",
     imagen: null,
-    categoria: "",
+    categoria_id: "",
     concepto_id: null,
   });
 
+  const [search, setSearch] = useState("");
+  const [searchCategoria, setSearchCategoria] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
   useEffect(() => {
     fetchConceptos();
+    fetchCategorias();
   }, []);
 
-  const fetchConceptos = async () => {
+  const fetchConceptos = async (searchQuery = "", searchCategoria = "") => {
     const { data } = await axios.get(
-      "https://backseriousgame.onrender.com/api/getconceptos/"
+      "http://localhost:4000/api/getconceptos/",
+      {
+        params: { titulo: searchQuery, categoria_id: searchCategoria },
+      }
     );
     setConceptos(data);
   };
 
+  const fetchCategorias = async () => {
+    try {
+      const { data } = await axios.get("http://localhost:4000/api/categorias");
+      setCategorias(data);
+    } catch (error) {
+      console.error("Error al obtener las categorías:", error);
+    }
+  };
+
   const handleDelete = async (concepto_id) => {
-    const response = await axios.delete(
-      `https://backseriousgame.onrender.com/api/deleteconceptos/${concepto_id}`
-    );
-    if (response.status === 200) {
-      setConceptos(
-        conceptos.filter((concepto) => concepto.concepto_id !== concepto_id)
-      );
+    if (window.confirm("¿Estás seguro de que deseas eliminar este concepto?")) {
+      try {
+        const response = await axios.delete(
+          `http://localhost:4000/api/deleteconceptos/${concepto_id}`
+        );
+        if (response.status === 200) {
+          setConceptos(
+            conceptos.filter((concepto) => concepto.concepto_id !== concepto_id)
+          );
+        }
+      } catch (error) {
+        console.error("Error al eliminar el concepto:", error);
+      }
     }
   };
 
@@ -86,7 +106,7 @@ const Conceptos = () => {
       titulo: concepto.titulo || "",
       descripcion: concepto.descripcion || "",
       imagen: concepto.imagen || null,
-      categoria: concepto.categoria || "",
+      categoria_id: concepto.categoria_id || "",
       concepto_id: concepto.concepto_id || null,
     });
     setShow(true);
@@ -98,7 +118,7 @@ const Conceptos = () => {
       titulo: "",
       descripcion: "",
       imagen: null,
-      categoria: "",
+      categoria_id: "",
       concepto_id: null,
     });
   };
@@ -108,7 +128,7 @@ const Conceptos = () => {
     const formData = new FormData();
     formData.append("titulo", currentConcepto.titulo);
     formData.append("descripcion", currentConcepto.descripcion);
-    formData.append("categoria", currentConcepto.categoria);
+    formData.append("categoria_id", currentConcepto.categoria_id);
     if (currentConcepto.imagen instanceof File) {
       formData.append("imagen", currentConcepto.imagen);
     } else if (currentConcepto.imagen) {
@@ -117,8 +137,8 @@ const Conceptos = () => {
 
     const method = currentConcepto.concepto_id ? "put" : "post";
     const url = currentConcepto.concepto_id
-      ? `https://backseriousgame.onrender.com/api/edit/${currentConcepto.concepto_id}`
-      : "https://backseriousgame.onrender.com/api/postconceptos/";
+      ? `http://localhost:4000/api/edit/${currentConcepto.concepto_id}`
+      : "http://localhost:4000/api/postconceptos/";
 
     try {
       const response = await axios({
@@ -136,7 +156,6 @@ const Conceptos = () => {
             c.concepto_id === currentConcepto.concepto_id ? response.data : c
           )
         );
-        fetchConceptos();
       } else {
         setConceptos([...conceptos, response.data]);
       }
@@ -145,6 +164,11 @@ const Conceptos = () => {
       handleClose();
       console.error(error);
     }
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    fetchConceptos(search, searchCategoria);
   };
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -179,40 +203,78 @@ const Conceptos = () => {
           backgroundImage: `url(${backgroundImage})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
-          paddingTop: "50px", // Agregar padding superior para mover contenido hacia arriba
-          overflowY: "auto", // Permitir desplazamiento vertical en la página
+          paddingTop: "10px",
+          overflowY: "auto",
         }}
       >
         <Row className="justify-content-md-center">
-          <Col xs={12} className="text-center mb-4">
+          <Col xs={12} className="text-center mb-2 title-container">
             <div
               style={{
                 backgroundColor: "rgba(255, 255, 255, 0.9)",
-                padding: "20px 40px",
+                padding: "10px 20px",
                 borderRadius: "15px",
                 boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                fontSize: "2rem",
+                fontSize: "1.5rem",
                 fontWeight: "bold",
+                marginTop: "0px",
+                marginBottom: "10px",
               }}
             >
               Panel de Administración de Conceptos
             </div>
           </Col>
           <Col xs={12}>
+            <Form onSubmit={handleSearch} className="mb-3">
+              <Row>
+                <Col md={5}>
+                  <Form.Control
+                    type="text"
+                    placeholder="Buscar por título"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </Col>
+                <Col md={5}>
+                  <Form.Control
+                    as="select"
+                    value={searchCategoria}
+                    onChange={(e) => setSearchCategoria(e.target.value)}
+                  >
+                    <option value="">Todas las categorías</option>
+                    {categorias.map((categoria) => (
+                      <option
+                        key={categoria.categoria_id}
+                        value={categoria.categoria_id}
+                      >
+                        {categoria.nombre_categoria}
+                      </option>
+                    ))}
+                  </Form.Control>
+                </Col>
+                <Col md={2}>
+                  <Button type="submit" variant="primary">
+                    Buscar
+                  </Button>
+                </Col>
+              </Row>
+            </Form>
             <div
+              className="custom-container"
               style={{
                 backgroundColor: "rgba(255, 255, 255, 0.7)",
                 padding: "20px",
                 borderRadius: "15px",
                 boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                overflowY: "auto", // Permitir desplazamiento vertical en el contenedor
-                maxHeight: "500px", // Ajustar esta altura según tus necesidades
+                overflowY: "auto",
+                maxHeight: "500px",
+                marginBottom: "20px",
               }}
             >
               <Button
                 variant="primary"
                 onClick={() => handleShow({})}
-                className="mb-3 float-end" // Mueve el botón a la derecha
+                className="mb-3 float-end"
               >
                 <FaPlus /> Agregar Concepto
               </Button>
@@ -237,7 +299,7 @@ const Conceptos = () => {
                         <td>
                           {concepto.imagen ? (
                             <img
-                              src={`https://backseriousgame.onrender.com/src/uploads/${concepto.imagen}`}
+                              src={`http://localhost:4000/src/uploads/${concepto.imagen}`}
                               alt="Concepto"
                               className="concepto-imagen"
                             />
@@ -346,7 +408,7 @@ const Conceptos = () => {
                   !(currentConcepto.imagen instanceof File) && (
                     <div className="mt-3">
                       <img
-                        src={`https://backseriousgame.onrender.com/src/uploads/${currentConcepto.imagen}`}
+                        src={`http://localhost:4000/src/uploads/${currentConcepto.imagen}`}
                         alt="Concepto"
                         className="concepto-imagen"
                       />
@@ -356,17 +418,26 @@ const Conceptos = () => {
               <Form.Group className="mb-3">
                 <Form.Label>Categoría</Form.Label>
                 <Form.Control
-                  type="text"
-                  placeholder="Categoría del concepto"
-                  value={currentConcepto.categoria}
+                  as="select"
+                  value={currentConcepto.categoria_id}
                   onChange={(e) =>
                     setCurrentConcepto({
                       ...currentConcepto,
-                      categoria: e.target.value,
+                      categoria_id: e.target.value,
                     })
                   }
                   required
-                />
+                >
+                  <option value="">Seleccionar categoría</option>
+                  {categorias.map((categoria) => (
+                    <option
+                      key={categoria.categoria_id}
+                      value={categoria.categoria_id}
+                    >
+                      {categoria.nombre_categoria}
+                    </option>
+                  ))}
+                </Form.Control>
               </Form.Group>
               <Button variant="success" type="submit">
                 {currentConcepto.concepto_id

@@ -26,7 +26,10 @@ const UserAdd = () => {
       setPassword("");
       setRol("");
     } catch (error) {
-      setMessage("Error al crear usuario: " + (error.response?.data?.error || error.message));
+      setMessage(
+        "Error al crear usuario: " +
+          (error.response?.data?.error || error.message)
+      );
     }
   };
 
@@ -90,12 +93,15 @@ const UserAdd = () => {
                   <Form.Group controlId="formRol" className="mb-3">
                     <Form.Label>Rol</Form.Label>
                     <Form.Control
-                      type="text"
-                      placeholder="Ingresa el rol"
+                      as="select"
                       value={rol}
                       onChange={(e) => setRol(e.target.value)}
                       required
-                    />
+                    >
+                      <option value="">Selecciona un rol</option>
+                      <option value="administrador">Administrador</option>
+                      <option value="docente">Docente</option>
+                    </Form.Control>
                   </Form.Group>
                   <Button variant="primary" type="submit" className="w-100">
                     Agregar Usuario
