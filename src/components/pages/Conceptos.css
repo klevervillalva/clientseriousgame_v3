@@ -80,5 +80,46 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   overflow-y: auto;
   max-height: 500px;
-  margin-bottom: 20px; /* Aumentar margen inferior */
+  margin-bottom: 30px; /* Aumentar margen inferior */
+}
+
+.modal-header-custom {
+  background-color: #007bff;
+  color: white;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+}
+
+.modal-title-custom {
+  margin: 0;
+}
+
+.modal-body-custom {
+  padding: 20px;
+  background-color: #f7f7f7;
+}
+
+.custom-container {
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.custom-btn {
+  margin-top: 20px;
+}
+
+.custom-input {
+  margin-bottom: 15px;
+}
+
+.modal-50w {
+  max-width: 50%;
+  margin-top: 50px; /* Ajustar el margen superior */
+}
+
+.modal-content {
+  overflow: visible; /* Eliminar el scroll */
 }

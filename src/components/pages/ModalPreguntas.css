@@ -1,0 +1,34 @@
+/* modal.css */
+
+.modal-header-custom {
+    background-color: #007bff;
+    color: white;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+  }
+  
+  .modal-title-custom {
+    margin: 0;
+  }
+  
+  .modal-body-custom {
+    padding: 20px;
+    background-color: #f7f7f7;
+  }
+  
+  .custom-input {
+    margin-bottom: 15px;
+  }
+  
+  .modal-70vh {
+    min-height: 70vh;
+  }
+  
+  .modal-lg {
+    max-width: 80%;
+  }
+  
+  .modal-content {
+    overflow: visible;
+  }
+  

@@ -11,8 +11,8 @@ import {
 } from "react-bootstrap";
 import axios from "axios";
 import { FaEdit, FaTrash, FaPlus, FaSearch } from "react-icons/fa";
-import Layout from "./Layout"; // Asumiendo que Layout ya tiene NavbarLateral y TopNavbar
-import backgroundImage from "../img/ciencia.jpg"; // Ruta correcta a tu imagen
+import Layout from "./Layout";
+import backgroundImage from "../img/ciencia.jpg";
 
 const Usuarios = () => {
   const [users, setUsers] = useState([]);

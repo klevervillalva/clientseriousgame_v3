@@ -1,0 +1,33 @@
+.modal-header-custom {
+    background-color: #007bff;
+    color: white;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+  }
+  
+  .modal-title-custom {
+    margin: 0;
+  }
+  
+  .modal-body-custom {
+    padding: 20px;
+    background-color: #f7f7f7;
+  }
+  
+  .custom-input {
+    margin-bottom: 15px;
+  }
+  
+  .modal-50w {
+    max-width: 50%;
+    margin-top: 50px;
+  }
+  
+  .modal-content {
+    overflow: visible;
+  }
+  
+  .no-scroll {
+    overflow: hidden !important;
+  }
+  

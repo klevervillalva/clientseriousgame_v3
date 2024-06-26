@@ -30,7 +30,7 @@ function Login() {
     setError("");
     try {
       const response = await axios.post(
-        "https://back-serious-game.vercel.app/api/auth/login", // Cambiada a la API local
+        "https://back-serious-game.vercel.app/api/auth/login",
         { email, password }
       );
       console.log("Login successful:", response.data);

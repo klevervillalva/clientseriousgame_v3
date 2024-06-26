@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Modal,
   Button,
@@ -10,10 +10,10 @@ import {
   Col,
 } from "react-bootstrap";
 import axios from "axios";
-import { FaPlus, FaEdit, FaTrash, FaSearch } from "react-icons/fa";
-import "./Conceptos.css";
+import { FaPlus, FaTrash, FaSearch, FaQuestion, FaEdit } from "react-icons/fa";
+import "./ejercicios.css";
 import Layout from "./Layout";
-import backgroundImage from "../img/ciencia.jpg"; // Ruta correcta a tu imagen
+import backgroundImage from "../img/ciencia.jpg";
 
 const useEjercicios = () => {
   const [ejercicios, setEjercicios] = useState([]);
@@ -47,38 +47,38 @@ const useEjercicios = () => {
   return { ejercicios, fetchEjercicios, searchEjercicios };
 };
 
-const Ejercicios = () => {
-  const [userData, setUserData] = useState({
-    nombre: "",
-    email: "",
-    rol: "",
-    fecha_registro: "",
-  });
+const usePreguntas = () => {
+  const [preguntas, setPreguntas] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const fetchPreguntas = useCallback(async () => {
+    try {
+      const response = await axios.get(
+        searchQuery
+          ? `https://back-serious-game.vercel.app/api/search/${encodeURIComponent(
+              searchQuery
+            )}`
+          : "https://back-serious-game.vercel.app/api/preguntas/obtener"
+      );
+      setPreguntas(response.data);
+    } catch (error) {
+      console.error("Error al obtener preguntas:", error);
+    }
+  }, [searchQuery]);
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get(
-          "https://back-serious-game.vercel.app/api/auth/perfil",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        setUserData(response.data);
-      } catch (error) {
-        console.error("Error al obtener los datos del usuario:", error);
-      }
-    };
+    fetchPreguntas();
+  }, [searchQuery, fetchPreguntas]);
 
-    fetchUserData();
-  }, []);
+  return { preguntas, fetchPreguntas, setSearchQuery };
+};
 
+const Ejercicios = () => {
   const { ejercicios, fetchEjercicios, searchEjercicios } = useEjercicios();
+  const { fetchPreguntas } = usePreguntas();
   const [tiposEjercicios, setTiposEjercicios] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [currentEjercicio, setCurrentEjercicio] = useState({
     ejercicio_id: null,
     pregunta: "",
@@ -87,7 +87,22 @@ const Ejercicios = () => {
     detalles: "",
     mostrar_solucion: false,
     explicacion_solucion: "",
+    opciones: Array(4).fill({ texto_opcion: "", es_correcta: false }),
+    matriz_punnett: Array(4).fill({ alelo1: "", alelo2: "", resultado: "" }),
+    estado: true, // Agregado estado por defecto
+  });
+  const [showAddPreguntaModal, setShowAddPreguntaModal] = useState(false);
+  const [currentPregunta, setCurrentPregunta] = useState({
+    pregunta_id: null,
+    texto_pregunta: "",
+    imagen: null,
+    tipo_pregunta: "Selección Múltiple",
+    detalles: "",
+    explicacion_solucion: "",
+    estado: true,
     opciones: [{ texto_opcion: "", es_correcta: false }],
+    concepto_id: null,
+    ejercicio_id: null,
   });
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5; // Número de ejercicios por página
@@ -109,8 +124,10 @@ const Ejercicios = () => {
     const { name, value, files, type } = e.target;
     if (type === "file") {
       setCurrentEjercicio({ ...currentEjercicio, imagen: files[0] });
+    } else if (type === "checkbox") {
+      setCurrentEjercicio({ ...currentEjercicio, [name]: e.target.checked });
     } else {
-      setCurrentEjercicio({ ...currentEjercicio, [name]: value });
+      setCurrentEjercicio({ ...currentEjercicio, [name]: value || null });
     }
   };
 
@@ -121,13 +138,13 @@ const Ejercicios = () => {
     setCurrentEjercicio({ ...currentEjercicio, opciones: updatedOptions });
   };
 
-  const addOption = () => {
+  const handlePunnettChange = (index, field, value) => {
+    const updatedPunnett = currentEjercicio.matriz_punnett.map((cell, idx) =>
+      idx === index ? { ...cell, [field]: value } : cell
+    );
     setCurrentEjercicio({
       ...currentEjercicio,
-      opciones: [
-        ...currentEjercicio.opciones,
-        { texto_opcion: "", es_correcta: false },
-      ],
+      matriz_punnett: updatedPunnett,
     });
   };
 
@@ -142,6 +159,31 @@ const Ejercicios = () => {
       return;
     }
 
+    if (currentEjercicio.tipo_id === "1") {
+      const hasCorrectOption = currentEjercicio.opciones.some(
+        (op) => op.es_correcta
+      );
+      if (!hasCorrectOption) {
+        alert("Debe haber al menos una opción correcta seleccionada.");
+        return;
+      }
+    }
+
+    if (currentEjercicio.tipo_id === "2") {
+      const validPunnett = currentEjercicio.matriz_punnett.filter(
+        (cell) =>
+          cell.alelo1.trim() !== "" &&
+          cell.alelo2.trim() !== "" &&
+          cell.resultado.trim() !== ""
+      );
+      if (validPunnett.length !== currentEjercicio.matriz_punnett.length) {
+        alert(
+          "Todas las celdas de la matriz Punnett deben tener texto antes de guardar."
+        );
+        return;
+      }
+    }
+
     const formData = new FormData();
     formData.append("pregunta", currentEjercicio.pregunta);
     formData.append("tipo_id", currentEjercicio.tipo_id);
@@ -151,7 +193,18 @@ const Ejercicios = () => {
       "explicacion_solucion",
       currentEjercicio.explicacion_solucion
     );
-    formData.append("opciones", JSON.stringify(validOptions));
+    formData.append("estado", currentEjercicio.estado); // Agregado estado
+    formData.append("opcionesMultiples", JSON.stringify(validOptions));
+
+    if (currentEjercicio.tipo_id === "2") {
+      const validPunnett = currentEjercicio.matriz_punnett.filter(
+        (cell) =>
+          cell.alelo1.trim() !== "" &&
+          cell.alelo2.trim() !== "" &&
+          cell.resultado.trim() !== ""
+      );
+      formData.append("matrizPunnett", JSON.stringify(validPunnett));
+    }
 
     if (currentEjercicio.imagen && currentEjercicio.imagen instanceof File) {
       formData.append(
@@ -162,13 +215,12 @@ const Ejercicios = () => {
     }
 
     try {
-      const method = currentEjercicio.ejercicio_id ? "put" : "post";
       const url = currentEjercicio.ejercicio_id
-        ? `https://back-serious-game.vercel.app/api/ejercicios/${currentEjercicio.ejercicio_id}`
-        : "https://back-serious-game.vercel.app/api/ejercicios";
+        ? `https://back-serious-game.vercel.app/api/updateejercicio/${currentEjercicio.ejercicio_id}`
+        : "https://back-serious-game.vercel.app/api/postejercicios";
 
       await axios({
-        method: method,
+        method: currentEjercicio.ejercicio_id ? "put" : "post",
         url: url,
         data: formData,
         headers: { "Content-Type": "multipart/form-data" },
@@ -190,11 +242,12 @@ const Ejercicios = () => {
     ) {
       try {
         await axios.delete(
-          `https://back-serious-game.vercel.app/api/ejercicios/${ejercicioId}`
+          `https://back-serious-game.vercel.app/api/deleteejercicio/${ejercicioId}`
         );
-        fetchEjercicios();
+        fetchEjercicios(); // Refresca la lista de ejercicios
       } catch (error) {
         console.error("Error al eliminar el ejercicio:", error);
+        alert("Hubo un error al eliminar el ejercicio. Inténtalo de nuevo.");
       }
     }
   };
@@ -213,6 +266,136 @@ const Ejercicios = () => {
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
+  };
+
+  const handleEstadoChange = async (ejercicio) => {
+    const updatedEjercicio = { ...ejercicio, estado: !ejercicio.estado };
+
+    try {
+      await axios.put(
+        `https://back-serious-game.vercel.app/api/updateejercicio/${ejercicio.ejercicio_id}`,
+        updatedEjercicio
+      );
+      fetchEjercicios();
+    } catch (error) {
+      console.error("Error al actualizar el estado del ejercicio:", error);
+    }
+  };
+
+  const handleAddPreguntaChange = (e) => {
+    const { name, value, files, type } = e.target;
+    if (type === "file") {
+      setCurrentPregunta({ ...currentPregunta, imagen: files[0] });
+    } else if (type === "checkbox") {
+      setCurrentPregunta({ ...currentPregunta, [name]: e.target.checked });
+    } else {
+      setCurrentPregunta({ ...currentPregunta, [name]: value || null });
+    }
+  };
+
+  const handleAddPreguntaOptionChange = (index, field, value) => {
+    const updatedOptions = currentPregunta.opciones.map((option, idx) =>
+      idx === index ? { ...option, [field]: value } : option
+    );
+    setCurrentPregunta({ ...currentPregunta, opciones: updatedOptions });
+  };
+
+  const addPreguntaOption = () => {
+    setCurrentPregunta({
+      ...currentPregunta,
+      opciones: [
+        ...currentPregunta.opciones,
+        { texto_opcion: "", es_correcta: false },
+      ],
+    });
+  };
+
+  const handleAddPreguntaSubmit = async (e) => {
+    e.preventDefault();
+
+    const validOptions = currentPregunta.opciones.filter(
+      (op) => op.texto_opcion.trim() !== ""
+    );
+
+    if (validOptions.length !== currentPregunta.opciones.length) {
+      alert("Todas las opciones deben tener texto antes de guardar.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("texto_pregunta", currentPregunta.texto_pregunta);
+    formData.append("tipo_pregunta", "Selección Múltiple");
+    formData.append("detalles", currentPregunta.detalles);
+    formData.append(
+      "explicacion_solucion",
+      currentPregunta.explicacion_solucion
+    );
+    formData.append("estado", currentPregunta.estado);
+    formData.append("opciones", JSON.stringify(validOptions));
+    formData.append(
+      "concepto_id",
+      currentPregunta.concepto_id !== null ? currentPregunta.concepto_id : ""
+    );
+    formData.append(
+      "ejercicio_id",
+      currentPregunta.ejercicio_id !== null ? currentPregunta.ejercicio_id : ""
+    );
+
+    if (currentPregunta.imagen && currentPregunta.imagen instanceof File) {
+      formData.append(
+        "imagen",
+        currentPregunta.imagen,
+        currentPregunta.imagen.name
+      );
+    }
+
+    try {
+      const url = "https://back-serious-game.vercel.app/api/preguntas";
+
+      await axios({
+        method: "post",
+        url: url,
+        data: formData,
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      setShowAddPreguntaModal(false);
+      fetchPreguntas();
+    } catch (error) {
+      console.error(
+        "Error al guardar la pregunta:",
+        error.response?.data || error.message
+      );
+    }
+  };
+
+  const handleEdit = async (ejercicioId) => {
+    try {
+      const response = await axios.get(
+        `https://back-serious-game.vercel.app/api/getejercicios/${ejercicioId}`
+      );
+      const ejercicio = response.data;
+      setCurrentEjercicio({
+        ejercicio_id: ejercicio.ejercicio_id,
+        pregunta: ejercicio.pregunta,
+        imagen: null,
+        tipo_id: ejercicio.tipo_id.toString(),
+        detalles: ejercicio.detalles,
+        mostrar_solucion: ejercicio.mostrar_solucion,
+        explicacion_solucion: ejercicio.explicacion_solucion,
+        opciones:
+          ejercicio.opciones_multiples ||
+          Array(4).fill({ texto_opcion: "", es_correcta: false }),
+        matriz_punnett:
+          ejercicio.matriz_punnett ||
+          Array(4).fill({ alelo1: "", alelo2: "", resultado: "" }),
+        estado: ejercicio.estado,
+      });
+      setIsEditing(true);
+      setShowModal(true);
+    } catch (error) {
+      console.error("Error al obtener el ejercicio:", error);
+    }
   };
 
   const paginationItems = [];
@@ -303,8 +486,18 @@ const Ejercicios = () => {
                     detalles: "",
                     mostrar_solucion: false,
                     explicacion_solucion: "",
-                    opciones: [{ texto_opcion: "", es_correcta: false }],
+                    opciones: Array(4).fill({
+                      texto_opcion: "",
+                      es_correcta: false,
+                    }),
+                    matriz_punnett: Array(4).fill({
+                      alelo1: "",
+                      alelo2: "",
+                      resultado: "",
+                    }),
+                    estado: true, // Agregado estado por defecto
                   });
+                  setIsEditing(false);
                   setShowModal(true);
                 }}
               >
@@ -314,15 +507,16 @@ const Ejercicios = () => {
               <Modal
                 show={showModal}
                 onHide={() => setShowModal(false)}
-                size="md"
+                size="lg" // Tamaño aumentado del modal
+                centered // Centrar el modal verticalmente
               >
-                <Modal.Header closeButton>
+                <Modal.Header closeButton className="modal-header-custom">
                   <Modal.Title>
                     {currentEjercicio.ejercicio_id ? "Editar" : "Agregar"}{" "}
                     Ejercicio
                   </Modal.Title>
                 </Modal.Header>
-                <Modal.Body>
+                <Modal.Body className="modal-body-custom">
                   <Form onSubmit={handleSubmit}>
                     <Form.Group className="mb-3">
                       <Form.Label>Pregunta</Form.Label>
@@ -347,6 +541,7 @@ const Ejercicios = () => {
                         required
                         value={currentEjercicio.tipo_id}
                         onChange={handleInputChange}
+                        disabled={isEditing}
                       >
                         <option value="">Seleccionar tipo</option>
                         {tiposEjercicios.map((tipo) => (
@@ -367,6 +562,7 @@ const Ejercicios = () => {
                         placeholder="Detalles adicionales"
                       />
                     </Form.Group>
+
                     <Form.Group className="mb-3">
                       <Form.Check
                         type="checkbox"
@@ -392,16 +588,228 @@ const Ejercicios = () => {
                         placeholder="Explica la solución"
                       />
                     </Form.Group>
-                    {currentEjercicio.opciones.map((opcion, index) => (
-                      <div key={index} className="mb-3">
+                    <Form.Group className="mb-3">
+                      <Form.Check
+                        type="checkbox"
+                        label="Activo"
+                        name="estado"
+                        checked={currentEjercicio.estado}
+                        onChange={handleInputChange}
+                      />
+                    </Form.Group>
+
+                    {currentEjercicio.tipo_id === "1" && (
+                      <>
                         <Form.Label>Opciones</Form.Label>
+                        {currentEjercicio.opciones.map((opcion, index) => (
+                          <div key={index} className="mb-3">
+                            <div className="option-group">
+                              <Form.Control
+                                type="text"
+                                placeholder="Texto de la opción"
+                                value={opcion.texto_opcion || ""}
+                                onChange={(e) =>
+                                  handleOptionChange(
+                                    index,
+                                    "texto_opcion",
+                                    e.target.value
+                                  )
+                                }
+                                required
+                              />
+                              <Form.Check
+                                type="checkbox"
+                                label="Correcta"
+                                checked={opcion.es_correcta}
+                                onChange={(e) =>
+                                  handleOptionChange(
+                                    index,
+                                    "es_correcta",
+                                    e.target.checked
+                                  )
+                                }
+                                className="ms-2"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+
+                    {currentEjercicio.tipo_id === "2" && (
+                      <>
+                        <Form.Label>Opciones</Form.Label>
+                        {currentEjercicio.opciones.map((opcion, index) => (
+                          <div key={index} className="mb-3">
+                            <div className="option-group">
+                              <Form.Control
+                                type="text"
+                                placeholder="Texto de la opción"
+                                value={opcion.texto_opcion || ""}
+                                onChange={(e) =>
+                                  handleOptionChange(
+                                    index,
+                                    "texto_opcion",
+                                    e.target.value
+                                  )
+                                }
+                                required
+                              />
+                              <Form.Check
+                                type="checkbox"
+                                label="Correcta"
+                                checked={opcion.es_correcta}
+                                onChange={(e) =>
+                                  handleOptionChange(
+                                    index,
+                                    "es_correcta",
+                                    e.target.checked
+                                  )
+                                }
+                                className="ms-2"
+                              />
+                            </div>
+                          </div>
+                        ))}
+
+                        <Form.Label>Llene los datos para la matriz de Punnett</Form.Label>
+                        {currentEjercicio.matriz_punnett.map((cell, index) => (
+                          <Row key={index} className="mb-3">
+                            <Col>
+                              <Form.Control
+                                type="text"
+                                placeholder="Alelo 1"
+                                value={cell.alelo1 || ""}
+                                onChange={(e) =>
+                                  handlePunnettChange(
+                                    index,
+                                    "alelo1",
+                                    e.target.value
+                                  )
+                                }
+                                required
+                              />
+                            </Col>
+                            <Col>
+                              <Form.Control
+                                type="text"
+                                placeholder="Alelo 2"
+                                value={cell.alelo2 || ""}
+                                onChange={(e) =>
+                                  handlePunnettChange(
+                                    index,
+                                    "alelo2",
+                                    e.target.value
+                                  )
+                                }
+                                required
+                              />
+                            </Col>
+                            <Col>
+                              <Form.Control
+                                type="text"
+                                placeholder="Resultado"
+                                value={cell.resultado || ""}
+                                onChange={(e) =>
+                                  handlePunnettChange(
+                                    index,
+                                    "resultado",
+                                    e.target.value
+                                  )
+                                }
+                                required
+                              />
+                            </Col>
+                          </Row>
+                        ))}
+                      </>
+                    )}
+
+                    <Button type="submit" variant="success" className="mt-3">
+                      Guardar
+                    </Button>
+                  </Form>
+                </Modal.Body>
+              </Modal>
+
+              <Modal
+                show={showAddPreguntaModal}
+                onHide={() => setShowAddPreguntaModal(false)}
+                size="md"
+              >
+                <Modal.Header closeButton>
+                  <Modal.Title>Agregar Pregunta</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                  <Form onSubmit={handleAddPreguntaSubmit}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Texto de la Pregunta</Form.Label>
+                      <Form.Control
+                        type="text"
+                        required
+                        name="texto_pregunta"
+                        value={currentPregunta.texto_pregunta}
+                        onChange={handleAddPreguntaChange}
+                        placeholder="Escribe la pregunta"
+                      />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Imagen</Form.Label>
+                      <Form.Control
+                        type="file"
+                        onChange={handleAddPreguntaChange}
+                      />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Tipo de Pregunta</Form.Label>
+                      <Form.Control
+                        type="text"
+                        required
+                        name="tipo_pregunta"
+                        value={currentPregunta.tipo_pregunta}
+                        onChange={handleAddPreguntaChange}
+                        readOnly
+                      />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Detalles</Form.Label>
+                      <Form.Control
+                        type="text"
+                        required
+                        name="detalles"
+                        value={currentPregunta.detalles}
+                        onChange={handleAddPreguntaChange}
+                      />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Explicación Solución</Form.Label>
+                      <Form.Control
+                        type="text"
+                        required
+                        name="explicacion_solucion"
+                        value={currentPregunta.explicacion_solucion}
+                        onChange={handleAddPreguntaChange}
+                      />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                      <Form.Check
+                        type="checkbox"
+                        label="Activo"
+                        name="estado"
+                        checked={currentPregunta.estado}
+                        onChange={handleAddPreguntaChange}
+                      />
+                    </Form.Group>
+                    <Form.Label>Opciones</Form.Label>
+                    {currentPregunta.opciones.map((opcion, index) => (
+                      <div key={index} className="mb-3">
                         <div className="option-group">
                           <Form.Control
                             type="text"
                             placeholder="Texto de la opción"
                             value={opcion.texto_opcion || ""}
                             onChange={(e) =>
-                              handleOptionChange(
+                              handleAddPreguntaOptionChange(
                                 index,
                                 "texto_opcion",
                                 e.target.value
@@ -414,7 +822,7 @@ const Ejercicios = () => {
                             label="Correcta"
                             checked={opcion.es_correcta}
                             onChange={(e) =>
-                              handleOptionChange(
+                              handleAddPreguntaOptionChange(
                                 index,
                                 "es_correcta",
                                 e.target.checked
@@ -426,7 +834,7 @@ const Ejercicios = () => {
                       </div>
                     ))}
                     <Button
-                      onClick={addOption}
+                      onClick={addPreguntaOption}
                       variant="secondary"
                       className="mb-3"
                     >
@@ -453,9 +861,10 @@ const Ejercicios = () => {
                     <th>Imagen</th>
                     <th>Tipo de Ejercicio</th>
                     <th>Detalles</th>
-                    <th>Mostrar Solución</th>
                     <th>Explicación Solución</th>
                     <th>Opciones</th>
+                    <th>Punnett</th>
+                    <th>Estado</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -476,36 +885,70 @@ const Ejercicios = () => {
                       </td>
                       <td>{ejercicio.nombre_tipo}</td>
                       <td>{ejercicio.detalles}</td>
-                      <td>{ejercicio.mostrar_solucion ? "Sí" : "No"}</td>
                       <td>{ejercicio.explicacion_solucion}</td>
                       <td>
-                        {ejercicio.opciones_multiples?.map((opc, idx) => (
-                          <div key={idx}>
-                            {opc.texto_opcion} (
-                            {opc.es_correcta ? "Correcta" : "Incorrecta"})
-                          </div>
-                        ))}
+                        {ejercicio.opciones_multiples[0]
+                          ? ejercicio.opciones_multiples?.map((opc, idx) => (
+                              <div key={idx}>
+                                {opc.texto_opcion}(
+                                {opc.es_correcta ? "Correcta" : "Incorrecta"})
+                              </div>
+                            ))
+                          : "No existe"}
+                      </td>
+                      <td>
+                        {ejercicio.matriz_punnett[0]
+                          ? ejercicio.matriz_punnett?.map((cell, idx) => (
+                              <div key={idx}>
+                                {cell.alelo1} x {cell.alelo2} = {cell.resultado}
+                              </div>
+                            ))
+                          : "No existe"}
+                      </td>
+                      <td>
+                        <Form.Check
+                          type="checkbox"
+                          checked={ejercicio.estado}
+                          onChange={() => handleEstadoChange(ejercicio)}
+                        />
                       </td>
                       <td>
                         <div className="action-buttons">
-                          <Button
-                            variant="warning"
-                            onClick={() => {
-                              setCurrentEjercicio({
-                                ...ejercicio,
-                                opciones: ejercicio.opciones_multiples,
-                              });
-                              setShowModal(true);
-                            }}
-                            className="me-2"
-                          >
-                            <FaEdit />
-                          </Button>
                           <Button
                             variant="danger"
                             onClick={() => handleDelete(ejercicio.ejercicio_id)}
                           >
                             <FaTrash />
+                          </Button>
+                          <Button
+                            variant="warning"
+                            onClick={() => handleEdit(ejercicio.ejercicio_id)}
+                            className="ms-2"
+                          >
+                            <FaEdit />
+                          </Button>
+                          <Button
+                            variant="primary"
+                            onClick={() => {
+                              setCurrentPregunta({
+                                pregunta_id: null,
+                                texto_pregunta: "",
+                                imagen: null,
+                                tipo_pregunta: "Selección Múltiple",
+                                detalles: "",
+                                explicacion_solucion: "",
+                                estado: true,
+                                opciones: [
+                                  { texto_opcion: "", es_correcta: false },
+                                ],
+                                concepto_id: null,
+                                ejercicio_id: ejercicio.ejercicio_id,
+                              });
+                              setShowAddPreguntaModal(true);
+                            }}
+                            className="ms-2"
+                          >
+                            <FaQuestion />
                           </Button>
                         </div>
                       </td>

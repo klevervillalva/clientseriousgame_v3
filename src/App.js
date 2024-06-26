@@ -11,6 +11,7 @@ import Usuarios from "./components/pages/Usuarios";
 import Conceptos from "./components/pages/Conceptos";
 import Ejercicios from "./components/pages/Ejercicios";
 import Evaluacion from "./components/pages/Evaluacion";
+import Categorias from "./components/pages/Categorias";
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
         <Route path="/conceptos" element={<Conceptos />} />
         <Route path="/ejercicios" element={<Ejercicios />} />
         <Route path="/evaluacion" element={<Evaluacion />} />
+        <Route path="/categorias" element={<Categorias/>} />
       </Routes>
     </Router>
   );
