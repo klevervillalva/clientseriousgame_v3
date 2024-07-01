@@ -19,31 +19,51 @@ import "./modal.css";
 const usePreguntas = () => {
   const [preguntas, setPreguntas] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filter, setFilter] = useState("");
+  const [stateFilter, setStateFilter] = useState("");
 
   const fetchPreguntas = useCallback(async () => {
     try {
-      const response = await axios.get(
-        searchQuery
-          ? `https://back-serious-game.vercel.app/api/search/${encodeURIComponent(
-              searchQuery
-            )}`
-          : "https://back-serious-game.vercel.app/api/preguntas/obtener"
-      );
+      let url = "http://localhost:4000/api/preguntas/obtener";
+      if (filter) {
+        url = `http://localhost:4000/api/evaluaciones/preguntas/${filter}`;
+      }
+      if (stateFilter) {
+        url = `http://localhost:4000/api/evaluaciones/activos?estado=${stateFilter}`;
+      }
+      if (searchQuery) {
+        url = `http://localhost:4000/api/search/${encodeURIComponent(
+          searchQuery
+        )}`;
+      }
+      const response = await axios.get(url);
       setPreguntas(response.data);
     } catch (error) {
       console.error("Error al obtener preguntas:", error);
     }
-  }, [searchQuery]);
+  }, [searchQuery, filter, stateFilter]);
 
   useEffect(() => {
     fetchPreguntas();
-  }, [searchQuery, fetchPreguntas]);
+  }, [fetchPreguntas]);
 
-  return { preguntas, fetchPreguntas, setSearchQuery };
+  return {
+    preguntas,
+    fetchPreguntas,
+    setSearchQuery,
+    setFilter,
+    setStateFilter,
+  };
 };
 
 const Evaluacion = () => {
-  const { preguntas, fetchPreguntas, setSearchQuery } = usePreguntas();
+  const {
+    preguntas,
+    fetchPreguntas,
+    setSearchQuery,
+    setFilter,
+    setStateFilter,
+  } = usePreguntas();
   const [showModal, setShowModal] = useState(false);
   const [conceptos, setConceptos] = useState([]);
   const [ejercicios, setEjercicios] = useState([]);
@@ -163,13 +183,15 @@ const Evaluacion = () => {
         currentPregunta.imagen,
         currentPregunta.imagen.name
       );
+    } else {
+      formData.append("imagenExistente", currentPregunta.imagen);
     }
 
     try {
       const method = currentPregunta.pregunta_id ? "put" : "post";
       const url = currentPregunta.pregunta_id
-        ? `https://back-serious-game.vercel.app/api/preguntas/${currentPregunta.pregunta_id}`
-        : "https://back-serious-game.vercel.app/api/preguntas";
+        ? `http://localhost:4000/api/preguntas/${currentPregunta.pregunta_id}`
+        : "http://localhost:4000/api/preguntas";
 
       await axios({
         method: method,
@@ -191,7 +213,9 @@ const Evaluacion = () => {
   const handleDelete = async (preguntaId) => {
     if (window.confirm("¿Estás seguro de que deseas eliminar esta pregunta?")) {
       try {
-        await axios.delete(`https://back-serious-game.vercel.app/api/preguntas/${preguntaId}`);
+        await axios.delete(
+          `https://back-serious-game.vercel.app/api/preguntas/${preguntaId}`
+        );
         fetchPreguntas();
       } catch (error) {
         console.error("Error al eliminar la pregunta:", error);
@@ -203,7 +227,11 @@ const Evaluacion = () => {
     e.preventDefault();
     const form = e.target;
     const pregunta = form.elements["search_pregunta"].value;
+    const filter = form.elements["filter"].value;
+    const stateFilter = form.elements["state_filter"].value;
     setSearchQuery(pregunta);
+    setFilter(filter);
+    setStateFilter(stateFilter);
   };
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -220,8 +248,12 @@ const Evaluacion = () => {
 
     try {
       await axios.put(
-        `https://back-serious-game.vercel.app/api/preguntas/${pregunta.pregunta_id}`,
-        updatedPregunta
+        `http://localhost:4000/api/preguntas/${pregunta.pregunta_id}`,
+        {
+          ...updatedPregunta,
+          concepto_id: updatedPregunta.concepto_id || null,
+          ejercicio_id: updatedPregunta.ejercicio_id || null,
+        }
       );
       fetchPreguntas();
     } catch (error) {
@@ -302,6 +334,26 @@ const Evaluacion = () => {
             className="me-2"
             style={{ flex: "1" }}
           />
+          <Form.Control
+            as="select"
+            name="filter"
+            className="me-2"
+            style={{ flex: "1" }}
+          >
+            <option value="">Seleccionar Filtro</option>
+            <option value="conceptos">Conceptos</option>
+            <option value="ejercicios">Ejercicios</option>
+          </Form.Control>
+          <Form.Control
+            as="select"
+            name="state_filter"
+            className="me-2"
+            style={{ flex: "1" }}
+          >
+            <option value="">Seleccionar Estado</option>
+            <option value="true">Activas</option>
+            <option value="false">Inactivas</option>
+          </Form.Control>
           <Button type="submit" variant="primary">
             <FaSearch /> Buscar
           </Button>

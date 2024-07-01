@@ -47,6 +47,7 @@ const Conceptos = () => {
 
   const [search, setSearch] = useState("");
   const [searchCategoria, setSearchCategoria] = useState("");
+  const [searchEstado, setSearchEstado] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -55,19 +56,33 @@ const Conceptos = () => {
     fetchCategorias();
   }, []);
 
-  const fetchConceptos = async (searchQuery = "", searchCategoria = "") => {
-    const { data } = await axios.get(
-      "https://back-serious-game.vercel.app/api/getconceptos/",
-      {
-        params: { titulo: searchQuery, categoria_id: searchCategoria },
-      }
-    );
+  const fetchConceptos = async (
+    searchQuery = "",
+    searchCategoria = "",
+    searchEstado = ""
+  ) => {
+    let url = "https://back-serious-game.vercel.app/api/getconceptos/";
+    let params = {};
+
+    if (searchEstado !== "") {
+      url = "http://localhost:4000/api/search/state";
+      params = { estado: searchEstado };
+    } else {
+      params = {
+        titulo: searchQuery,
+        categoria_id: searchCategoria,
+      };
+    }
+
+    const { data } = await axios.get(url, { params });
     setConceptos(data);
   };
 
   const fetchCategorias = async () => {
     try {
-      const { data } = await axios.get("https://back-serious-game.vercel.app/api/categorias");
+      const { data } = await axios.get(
+        "https://back-serious-game.vercel.app/api/categorias"
+      );
       setCategorias(data);
     } catch (error) {
       console.error("Error al obtener las categorías:", error);
@@ -255,7 +270,7 @@ const Conceptos = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    fetchConceptos(search, searchCategoria);
+    fetchConceptos(search, searchCategoria, searchEstado);
   };
 
   const handleEstadoChange = async (concepto) => {
@@ -338,7 +353,7 @@ const Conceptos = () => {
           <Col xs={12}>
             <Form onSubmit={handleSearch} className="mb-3">
               <Row>
-                <Col md={5}>
+                <Col md={4}>
                   <Form.Control
                     type="text"
                     placeholder="Buscar por título"
@@ -346,7 +361,7 @@ const Conceptos = () => {
                     onChange={(e) => setSearch(e.target.value)}
                   />
                 </Col>
-                <Col md={5}>
+                <Col md={4}>
                   <Form.Control
                     as="select"
                     value={searchCategoria}
@@ -361,6 +376,17 @@ const Conceptos = () => {
                         {categoria.nombre_categoria}
                       </option>
                     ))}
+                  </Form.Control>
+                </Col>
+                <Col md={2}>
+                  <Form.Control
+                    as="select"
+                    value={searchEstado}
+                    onChange={(e) => setSearchEstado(e.target.value)}
+                  >
+                    <option value="">Todos los estados</option>
+                    <option value="true">Activos</option>
+                    <option value="false">Inactivos</option>
                   </Form.Control>
                 </Col>
                 <Col md={2}>

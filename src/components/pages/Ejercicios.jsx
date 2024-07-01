@@ -44,7 +44,35 @@ const useEjercicios = () => {
     }
   };
 
-  return { ejercicios, fetchEjercicios, searchEjercicios };
+  const searchEjerciciosByType = async (tipo) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:4000/api/busqueda/tipo-ejercicio?tipo=${tipo}`
+      );
+      setEjercicios(response.data);
+    } catch (error) {
+      console.error("Error al buscar ejercicios por tipo:", error);
+    }
+  };
+
+  const searchEjerciciosByEstado = async (estado) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:4000/api/busqueda/activos?estado=${estado}`
+      );
+      setEjercicios(response.data);
+    } catch (error) {
+      console.error("Error al buscar ejercicios por estado:", error);
+    }
+  };
+
+  return {
+    ejercicios,
+    fetchEjercicios,
+    searchEjercicios,
+    searchEjerciciosByType,
+    searchEjerciciosByEstado,
+  };
 };
 
 const usePreguntas = () => {
@@ -74,7 +102,13 @@ const usePreguntas = () => {
 };
 
 const Ejercicios = () => {
-  const { ejercicios, fetchEjercicios, searchEjercicios } = useEjercicios();
+  const {
+    ejercicios,
+    fetchEjercicios,
+    searchEjercicios,
+    searchEjerciciosByType,
+    searchEjerciciosByEstado,
+  } = useEjercicios();
   const { fetchPreguntas } = usePreguntas();
   const [tiposEjercicios, setTiposEjercicios] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -100,7 +134,7 @@ const Ejercicios = () => {
     detalles: "",
     explicacion_solucion: "",
     estado: true,
-    opciones: [{ texto_opcion: "", es_correcta: false }],
+    opciones: Array(4).fill({ texto_opcion: "", es_correcta: false }), // Definir 4 opciones por defecto
     concepto_id: null,
     ejercicio_id: null,
   });
@@ -113,7 +147,9 @@ const Ejercicios = () => {
 
   const fetchTiposEjercicios = async () => {
     try {
-      const response = await axios.get("https://back-serious-game.vercel.app/api/tipos");
+      const response = await axios.get(
+        "https://back-serious-game.vercel.app/api/tipos"
+      );
       setTiposEjercicios(response.data);
     } catch (error) {
       console.error("Error al obtener los tipos de ejercicios:", error);
@@ -256,7 +292,16 @@ const Ejercicios = () => {
     e.preventDefault();
     const form = e.target;
     const pregunta = form.elements["search_pregunta"].value;
-    await searchEjercicios(pregunta);
+    const tipo = form.elements["tipo_ejercicio"].value;
+    const estado = form.elements["estado_ejercicio"].value;
+
+    if (pregunta) {
+      await searchEjercicios(pregunta);
+    } else if (tipo) {
+      await searchEjerciciosByType(tipo);
+    } else if (estado) {
+      await searchEjerciciosByEstado(estado);
+    }
   };
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -447,16 +492,39 @@ const Ejercicios = () => {
           className="d-flex justify-content-between mb-3 w-100 search-form"
           style={{ maxWidth: "1200px" }}
         >
-          <Form.Control
-            type="text"
-            name="search_pregunta"
-            placeholder="Buscar por pregunta"
-            className="me-2"
-            style={{ flex: "1" }}
-          />
-          <Button type="submit" variant="primary">
-            <FaSearch /> Buscar
-          </Button>
+          <Row className="w-100">
+            <Col>
+              <Form.Control
+                type="text"
+                name="search_pregunta"
+                placeholder="Buscar por pregunta"
+                className="mb-2"
+              />
+            </Col>
+            <Col>
+              <Form.Control as="select" name="tipo_ejercicio" className="mb-2">
+                <option value="">Todos los tipos</option>
+                <option value="seleccion_multiple">Selección Múltiple</option>
+                <option value="punnett">Punnett</option>
+              </Form.Control>
+            </Col>
+            <Col>
+              <Form.Control
+                as="select"
+                name="estado_ejercicio"
+                className="mb-2"
+              >
+                <option value="">Todos los estados</option>
+                <option value="true">Activos</option>
+                <option value="false">Inactivos</option>
+              </Form.Control>
+            </Col>
+            <Col xs="auto">
+              <Button type="submit" variant="primary" className="w-100">
+                <FaSearch /> Buscar
+              </Button>
+            </Col>
+          </Row>
         </Form>
 
         <div
@@ -509,6 +577,7 @@ const Ejercicios = () => {
                 onHide={() => setShowModal(false)}
                 size="lg" // Tamaño aumentado del modal
                 centered // Centrar el modal verticalmente
+                className="custom-modal"
               >
                 <Modal.Header closeButton className="modal-header-custom">
                   <Modal.Title>
@@ -672,7 +741,9 @@ const Ejercicios = () => {
                           </div>
                         ))}
 
-                        <Form.Label>Llene los datos para la matriz de Punnett</Form.Label>
+                        <Form.Label>
+                          Llene los datos para la matriz de Punnett
+                        </Form.Label>
                         {currentEjercicio.matriz_punnett.map((cell, index) => (
                           <Row key={index} className="mb-3">
                             <Col>
@@ -735,12 +806,14 @@ const Ejercicios = () => {
               <Modal
                 show={showAddPreguntaModal}
                 onHide={() => setShowAddPreguntaModal(false)}
-                size="md"
+                size="lg" // Ancho aumentado del modal
+                centered // Centrar el modal verticalmente
+                className="custom-modal"
               >
-                <Modal.Header closeButton>
+                <Modal.Header closeButton className="modal-header-custom">
                   <Modal.Title>Agregar Pregunta</Modal.Title>
                 </Modal.Header>
-                <Modal.Body>
+                <Modal.Body className="modal-body-custom">
                   <Form onSubmit={handleAddPreguntaSubmit}>
                     <Form.Group className="mb-3">
                       <Form.Label>Texto de la Pregunta</Form.Label>
@@ -833,13 +906,6 @@ const Ejercicios = () => {
                         </div>
                       </div>
                     ))}
-                    <Button
-                      onClick={addPreguntaOption}
-                      variant="secondary"
-                      className="mb-3"
-                    >
-                      <FaPlus /> Agregar Opción
-                    </Button>
                     <Button type="submit" variant="success" className="mt-3">
                       Guardar
                     </Button>
@@ -887,7 +953,7 @@ const Ejercicios = () => {
                       <td>{ejercicio.detalles}</td>
                       <td>{ejercicio.explicacion_solucion}</td>
                       <td>
-                        {ejercicio.opciones_multiples[0]
+                        {ejercicio.opciones_multiples?.length > 0
                           ? ejercicio.opciones_multiples?.map((opc, idx) => (
                               <div key={idx}>
                                 {opc.texto_opcion}(
@@ -897,10 +963,11 @@ const Ejercicios = () => {
                           : "No existe"}
                       </td>
                       <td>
-                        {ejercicio.matriz_punnett[0]
+                        {ejercicio.matriz_punnett?.length > 0
                           ? ejercicio.matriz_punnett?.map((cell, idx) => (
                               <div key={idx}>
-                                {cell.alelo1} x {cell.alelo2} = {cell.resultado}
+                                {cell?.alelo1} x {cell?.alelo2} ={" "}
+                                {cell?.resultado}
                               </div>
                             ))
                           : "No existe"}
@@ -938,9 +1005,10 @@ const Ejercicios = () => {
                                 detalles: "",
                                 explicacion_solucion: "",
                                 estado: true,
-                                opciones: [
-                                  { texto_opcion: "", es_correcta: false },
-                                ],
+                                opciones: Array(4).fill({
+                                  texto_opcion: "",
+                                  es_correcta: false,
+                                }), // Definir 4 opciones por defecto
                                 concepto_id: null,
                                 ejercicio_id: ejercicio.ejercicio_id,
                               });
