@@ -65,7 +65,7 @@ const Conceptos = () => {
     let params = {};
 
     if (searchEstado !== "") {
-      url = "http://localhost:4000/api/search/state";
+      url = "https://back-serious-game.vercel.app/api/search/state";
       params = { estado: searchEstado };
     } else {
       params = {

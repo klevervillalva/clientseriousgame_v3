@@ -47,7 +47,7 @@ const useEjercicios = () => {
   const searchEjerciciosByType = async (tipo) => {
     try {
       const response = await axios.get(
-        `http://localhost:4000/api/busqueda/tipo-ejercicio?tipo=${tipo}`
+        `https://back-serious-game.vercel.app/api/busqueda/tipo-ejercicio?tipo=${tipo}`
       );
       setEjercicios(response.data);
     } catch (error) {
@@ -58,7 +58,7 @@ const useEjercicios = () => {
   const searchEjerciciosByEstado = async (estado) => {
     try {
       const response = await axios.get(
-        `http://localhost:4000/api/busqueda/activos?estado=${estado}`
+        `https://back-serious-game.vercel.app/api/busqueda/activos?estado=${estado}`
       );
       setEjercicios(response.data);
     } catch (error) {

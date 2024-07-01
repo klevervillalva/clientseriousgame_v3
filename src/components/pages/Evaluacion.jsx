@@ -24,15 +24,15 @@ const usePreguntas = () => {
 
   const fetchPreguntas = useCallback(async () => {
     try {
-      let url = "http://localhost:4000/api/preguntas/obtener";
+      let url = "https://back-serious-game.vercel.app/api/preguntas/obtener";
       if (filter) {
-        url = `http://localhost:4000/api/evaluaciones/preguntas/${filter}`;
+        url = `https://back-serious-game.vercel.app/api/evaluaciones/preguntas/${filter}`;
       }
       if (stateFilter) {
-        url = `http://localhost:4000/api/evaluaciones/activos?estado=${stateFilter}`;
+        url = `https://back-serious-game.vercel.app/api/evaluaciones/activos?estado=${stateFilter}`;
       }
       if (searchQuery) {
-        url = `http://localhost:4000/api/search/${encodeURIComponent(
+        url = `https://back-serious-game.vercel.app/api/search/${encodeURIComponent(
           searchQuery
         )}`;
       }
@@ -190,8 +190,8 @@ const Evaluacion = () => {
     try {
       const method = currentPregunta.pregunta_id ? "put" : "post";
       const url = currentPregunta.pregunta_id
-        ? `http://localhost:4000/api/preguntas/${currentPregunta.pregunta_id}`
-        : "http://localhost:4000/api/preguntas";
+        ? `https://back-serious-game.vercel.app/api/preguntas/${currentPregunta.pregunta_id}`
+        : "https://back-serious-game.vercel.app/api/preguntas";
 
       await axios({
         method: method,
@@ -248,7 +248,7 @@ const Evaluacion = () => {
 
     try {
       await axios.put(
-        `http://localhost:4000/api/preguntas/${pregunta.pregunta_id}`,
+        `https://back-serious-game.vercel.app/api/preguntas/${pregunta.pregunta_id}`,
         {
           ...updatedPregunta,
           concepto_id: updatedPregunta.concepto_id || null,
