@@ -9,6 +9,8 @@ import {
   Row,
   Col,
 } from "react-bootstrap";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { FaPlus, FaEdit, FaTrash, FaSearch } from "react-icons/fa";
 import Layout from "./Layout";
@@ -65,6 +67,8 @@ const Evaluacion = () => {
     setStateFilter,
   } = usePreguntas();
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [preguntaToDelete, setPreguntaToDelete] = useState(null);
   const [conceptos, setConceptos] = useState([]);
   const [ejercicios, setEjercicios] = useState([]);
   const [currentPregunta, setCurrentPregunta] = useState({
@@ -140,7 +144,7 @@ const Evaluacion = () => {
     );
 
     if (validOptions.length !== currentPregunta.opciones.length) {
-      alert("Todas las opciones deben tener texto antes de guardar.");
+      toast.error("Todas las opciones deben tener texto antes de guardar.");
       return;
     }
 
@@ -149,12 +153,12 @@ const Evaluacion = () => {
     );
 
     if (correctOptions.length === 0) {
-      alert("Debe seleccionar al menos una opción correcta.");
+      toast.error("Debe seleccionar al menos una opción correcta.");
       return;
     }
 
     if (!currentPregunta.concepto_id && !currentPregunta.ejercicio_id) {
-      alert("Debe seleccionar un Concepto o un Ejercicio Asociado.");
+      toast.error("Debe seleccionar un Concepto o un Ejercicio Asociado.");
       return;
     }
 
@@ -202,23 +206,36 @@ const Evaluacion = () => {
 
       setShowModal(false);
       fetchPreguntas();
+      toast.success(
+        `Pregunta ${
+          currentPregunta.pregunta_id ? "actualizada" : "agregada"
+        } exitosamente.`
+      );
     } catch (error) {
       console.error(
         "Error al guardar la pregunta:",
         error.response?.data || error.message
       );
+      toast.error(
+        `Error al guardar la pregunta: ${error.response?.data || error.message}`
+      );
     }
   };
 
-  const handleDelete = async (preguntaId) => {
-    if (window.confirm("¿Estás seguro de que deseas eliminar esta pregunta?")) {
+  const handleDelete = async () => {
+    if (preguntaToDelete) {
       try {
         await axios.delete(
-          `https://back-serious-game.vercel.app/api/preguntas/${preguntaId}`
+          `https://back-serious-game.vercel.app/api/preguntas/${preguntaToDelete}`
         );
         fetchPreguntas();
+        toast.success("Pregunta eliminada exitosamente.");
+        setShowDeleteModal(false);
       } catch (error) {
         console.error("Error al eliminar la pregunta:", error);
+        toast.error(
+          "Hubo un error al eliminar la pregunta. Inténtalo de nuevo."
+        );
       }
     }
   };
@@ -232,6 +249,7 @@ const Evaluacion = () => {
     setSearchQuery(pregunta);
     setFilter(filter);
     setStateFilter(stateFilter);
+    setCurrentPage(1);
   };
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -256,8 +274,10 @@ const Evaluacion = () => {
         }
       );
       fetchPreguntas();
+      toast.success("Estado de la pregunta actualizado.");
     } catch (error) {
       console.error("Error al actualizar el estado de la pregunta:", error);
+      toast.error("Error al actualizar el estado de la pregunta.");
     }
   };
 
@@ -278,21 +298,36 @@ const Evaluacion = () => {
     }
   };
 
-  const paginationItems = [];
-  for (let number = 1; number <= totalPages; number++) {
-    paginationItems.push(
-      <Pagination.Item
-        key={number}
-        active={number === currentPage}
-        onClick={() => handlePageChange(number)}
-      >
-        {number}
-      </Pagination.Item>
+  const renderPaginationItems = () => {
+    const items = [];
+    const maxVisiblePages = 10;
+    const startPage = Math.max(
+      1,
+      Math.min(
+        currentPage - Math.floor(maxVisiblePages / 2),
+        totalPages - maxVisiblePages + 1
+      )
     );
-  }
+    const endPage = Math.min(startPage + maxVisiblePages - 1, totalPages);
+
+    for (let number = startPage; number <= endPage; number++) {
+      items.push(
+        <Pagination.Item
+          key={number}
+          active={number === currentPage}
+          onClick={() => handlePageChange(number)}
+        >
+          {number}
+        </Pagination.Item>
+      );
+    }
+
+    return items;
+  };
 
   return (
     <Layout pageTitle="Gestión de Evaluaciones">
+      <ToastContainer />
       <Container
         fluid
         className="p-4 d-flex flex-column align-items-center justify-content-start"
@@ -444,7 +479,8 @@ const Evaluacion = () => {
                     <Form.Group className="mb-3 custom-input">
                       <Form.Label>Detalles</Form.Label>
                       <Form.Control
-                        type="text"
+                        as="textarea"
+                        rows={3}
                         required
                         name="detalles"
                         value={currentPregunta.detalles}
@@ -454,7 +490,8 @@ const Evaluacion = () => {
                     <Form.Group className="mb-3 custom-input">
                       <Form.Label>Explicación Solución</Form.Label>
                       <Form.Control
-                        type="text"
+                        as="textarea"
+                        rows={3}
                         required
                         name="explicacion_solucion"
                         value={currentPregunta.explicacion_solucion}
@@ -555,7 +592,7 @@ const Evaluacion = () => {
               <Table striped bordered hover responsive className="mt-2">
                 <thead>
                   <tr>
-                    <th>ID</th>
+                    <th>#</th>
                     <th>Pregunta</th>
                     <th>Imagen</th>
                     <th>Tipo de Pregunta</th>
@@ -569,9 +606,9 @@ const Evaluacion = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {currentItems.map((pregunta) => (
+                  {currentItems.map((pregunta, index) => (
                     <tr key={pregunta.pregunta_id}>
-                      <td>{pregunta.pregunta_id}</td>
+                      <td>{indexOfFirstItem + index + 1}</td>
                       <td>{pregunta.texto_pregunta}</td>
                       <td>
                         {pregunta.imagen && (
@@ -618,13 +655,17 @@ const Evaluacion = () => {
                               });
                               setShowModal(true);
                             }}
-                            className="me-2"
+                            className="me-2 btn-sm"
                           >
                             <FaEdit />
                           </Button>
                           <Button
                             variant="danger"
-                            onClick={() => handleDelete(pregunta.pregunta_id)}
+                            onClick={() => {
+                              setPreguntaToDelete(pregunta.pregunta_id);
+                              setShowDeleteModal(true);
+                            }}
+                            className="btn-sm"
                           >
                             <FaTrash />
                           </Button>
@@ -644,7 +685,7 @@ const Evaluacion = () => {
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
                   />
-                  {paginationItems}
+                  {renderPaginationItems()}
                   <Pagination.Next
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
@@ -659,6 +700,33 @@ const Evaluacion = () => {
           </Row>
         </div>
       </Container>
+
+      <Modal
+        show={showDeleteModal}
+        onHide={() => setShowDeleteModal(false)}
+        dialogClassName="modal-50w no-scroll"
+      >
+        <Modal.Header className="modal-header-custom" closeButton>
+          <Modal.Title className="modal-title-custom">
+            Confirmar Eliminación
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="modal-body-custom">
+          <p>¿Estás seguro de que deseas eliminar esta pregunta?</p>
+          <div className="d-flex justify-content-end">
+            <Button
+              variant="secondary"
+              onClick={() => setShowDeleteModal(false)}
+              className="me-2"
+            >
+              Cancelar
+            </Button>
+            <Button variant="danger" onClick={handleDelete}>
+              Eliminar
+            </Button>
+          </div>
+        </Modal.Body>
+      </Modal>
     </Layout>
   );
 };

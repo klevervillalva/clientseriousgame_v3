@@ -9,6 +9,8 @@ import {
   Row,
   Col,
 } from "react-bootstrap";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { FaPlus, FaTrash, FaSearch, FaQuestion, FaEdit } from "react-icons/fa";
 import "./ejercicios.css";
@@ -113,6 +115,8 @@ const Ejercicios = () => {
   const [tiposEjercicios, setTiposEjercicios] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [ejercicioToDelete, setEjercicioToDelete] = useState(null);
   const [currentEjercicio, setCurrentEjercicio] = useState({
     ejercicio_id: null,
     pregunta: "",
@@ -147,9 +151,7 @@ const Ejercicios = () => {
 
   const fetchTiposEjercicios = async () => {
     try {
-      const response = await axios.get(
-        "https://back-serious-game.vercel.app/api/tipos"
-      );
+      const response = await axios.get("https://back-serious-game.vercel.app/api/tipos");
       setTiposEjercicios(response.data);
     } catch (error) {
       console.error("Error al obtener los tipos de ejercicios:", error);
@@ -191,7 +193,7 @@ const Ejercicios = () => {
       (op) => op.texto_opcion.trim() !== ""
     );
     if (validOptions.length !== currentEjercicio.opciones.length) {
-      alert("Todas las opciones deben tener texto antes de guardar.");
+      toast.error("Todas las opciones deben tener texto antes de guardar.");
       return;
     }
 
@@ -200,7 +202,7 @@ const Ejercicios = () => {
         (op) => op.es_correcta
       );
       if (!hasCorrectOption) {
-        alert("Debe haber al menos una opción correcta seleccionada.");
+        toast.error("Debe haber al menos una opción correcta seleccionada.");
         return;
       }
     }
@@ -213,7 +215,7 @@ const Ejercicios = () => {
           cell.resultado.trim() !== ""
       );
       if (validPunnett.length !== currentEjercicio.matriz_punnett.length) {
-        alert(
+        toast.error(
           "Todas las celdas de la matriz Punnett deben tener texto antes de guardar."
         );
         return;
@@ -264,26 +266,40 @@ const Ejercicios = () => {
 
       setShowModal(false);
       fetchEjercicios();
+      toast.success(
+        `Ejercicio ${
+          currentEjercicio.ejercicio_id ? "actualizado" : "agregado"
+        } exitosamente.`
+      );
     } catch (error) {
       console.error(
         "Error al guardar el ejercicio:",
         error.response?.data || error.message
       );
+      toast.error(
+        `Error al guardar el ejercicio: ${
+          error.response?.data || error.message
+        }`
+      );
     }
   };
 
-  const handleDelete = async (ejercicioId) => {
-    if (
-      window.confirm("¿Estás seguro de que deseas eliminar este ejercicio?")
-    ) {
+  const handleDelete = async () => {
+    if (ejercicioToDelete) {
       try {
         await axios.delete(
-          `https://back-serious-game.vercel.app/api/deleteejercicio/${ejercicioId}`
+          `https://back-serious-game.vercel.app/api/deleteejercicio/${ejercicioToDelete}`
         );
         fetchEjercicios(); // Refresca la lista de ejercicios
+        toast.success("Ejercicio eliminado exitosamente.");
       } catch (error) {
         console.error("Error al eliminar el ejercicio:", error);
-        alert("Hubo un error al eliminar el ejercicio. Inténtalo de nuevo.");
+        toast.error(
+          "Hubo un error al eliminar el ejercicio. Inténtalo de nuevo."
+        );
+      } finally {
+        setShowDeleteModal(false);
+        setEjercicioToDelete(null);
       }
     }
   };
@@ -302,6 +318,7 @@ const Ejercicios = () => {
     } else if (estado) {
       await searchEjerciciosByEstado(estado);
     }
+    setCurrentPage(1);
   };
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -322,8 +339,10 @@ const Ejercicios = () => {
         updatedEjercicio
       );
       fetchEjercicios();
+      toast.success("Estado del ejercicio actualizado.");
     } catch (error) {
       console.error("Error al actualizar el estado del ejercicio:", error);
+      toast.error("Error al actualizar el estado del ejercicio.");
     }
   };
 
@@ -345,16 +364,6 @@ const Ejercicios = () => {
     setCurrentPregunta({ ...currentPregunta, opciones: updatedOptions });
   };
 
-  const addPreguntaOption = () => {
-    setCurrentPregunta({
-      ...currentPregunta,
-      opciones: [
-        ...currentPregunta.opciones,
-        { texto_opcion: "", es_correcta: false },
-      ],
-    });
-  };
-
   const handleAddPreguntaSubmit = async (e) => {
     e.preventDefault();
 
@@ -363,7 +372,7 @@ const Ejercicios = () => {
     );
 
     if (validOptions.length !== currentPregunta.opciones.length) {
-      alert("Todas las opciones deben tener texto antes de guardar.");
+      toast.error("Todas las opciones deben tener texto antes de guardar.");
       return;
     }
 
@@ -406,10 +415,14 @@ const Ejercicios = () => {
 
       setShowAddPreguntaModal(false);
       fetchPreguntas();
+      toast.success("Pregunta agregada exitosamente.");
     } catch (error) {
       console.error(
         "Error al guardar la pregunta:",
         error.response?.data || error.message
+      );
+      toast.error(
+        `Error al guardar la pregunta: ${error.response?.data || error.message}`
       );
     }
   };
@@ -443,21 +456,34 @@ const Ejercicios = () => {
     }
   };
 
-  const paginationItems = [];
-  for (let number = 1; number <= totalPages; number++) {
-    paginationItems.push(
-      <Pagination.Item
-        key={number}
-        active={number === currentPage}
-        onClick={() => handlePageChange(number)}
-      >
-        {number}
-      </Pagination.Item>
-    );
-  }
+  const renderPaginationItems = () => {
+    const visiblePages = 10;
+    let startPage = Math.max(1, currentPage - Math.floor(visiblePages / 2));
+    let endPage = startPage + visiblePages - 1;
+
+    if (endPage > totalPages) {
+      endPage = totalPages;
+      startPage = Math.max(1, endPage - visiblePages + 1);
+    }
+
+    const paginationItems = [];
+    for (let number = startPage; number <= endPage; number++) {
+      paginationItems.push(
+        <Pagination.Item
+          key={number}
+          active={number === currentPage}
+          onClick={() => handlePageChange(number)}
+        >
+          {number}
+        </Pagination.Item>
+      );
+    }
+    return paginationItems;
+  };
 
   return (
     <Layout pageTitle="Gestión de Ejercicios">
+      <ToastContainer />
       <Container
         fluid
         className="p-4 d-flex flex-column align-items-center justify-content-start"
@@ -623,7 +649,8 @@ const Ejercicios = () => {
                     <Form.Group className="mb-3">
                       <Form.Label>Detalles</Form.Label>
                       <Form.Control
-                        type="text"
+                        as="textarea"
+                        rows={3}
                         name="detalles"
                         required
                         value={currentEjercicio.detalles}
@@ -649,7 +676,8 @@ const Ejercicios = () => {
                     <Form.Group className="mb-3">
                       <Form.Label>Explicación de la Solución</Form.Label>
                       <Form.Control
-                        type="text"
+                        as="textarea"
+                        rows={3}
                         name="explicacion_solucion"
                         required
                         value={currentEjercicio.explicacion_solucion}
@@ -707,40 +735,6 @@ const Ejercicios = () => {
 
                     {currentEjercicio.tipo_id === "2" && (
                       <>
-                        <Form.Label>Opciones</Form.Label>
-                        {currentEjercicio.opciones.map((opcion, index) => (
-                          <div key={index} className="mb-3">
-                            <div className="option-group">
-                              <Form.Control
-                                type="text"
-                                placeholder="Texto de la opción"
-                                value={opcion.texto_opcion || ""}
-                                onChange={(e) =>
-                                  handleOptionChange(
-                                    index,
-                                    "texto_opcion",
-                                    e.target.value
-                                  )
-                                }
-                                required
-                              />
-                              <Form.Check
-                                type="checkbox"
-                                label="Correcta"
-                                checked={opcion.es_correcta}
-                                onChange={(e) =>
-                                  handleOptionChange(
-                                    index,
-                                    "es_correcta",
-                                    e.target.checked
-                                  )
-                                }
-                                className="ms-2"
-                              />
-                            </div>
-                          </div>
-                        ))}
-
                         <Form.Label>
                           Llene los datos para la matriz de Punnett
                         </Form.Label>
@@ -847,7 +841,8 @@ const Ejercicios = () => {
                     <Form.Group className="mb-3">
                       <Form.Label>Detalles</Form.Label>
                       <Form.Control
-                        type="text"
+                        as="textarea"
+                        rows={3}
                         required
                         name="detalles"
                         value={currentPregunta.detalles}
@@ -857,7 +852,8 @@ const Ejercicios = () => {
                     <Form.Group className="mb-3">
                       <Form.Label>Explicación Solución</Form.Label>
                       <Form.Control
-                        type="text"
+                        as="textarea"
+                        rows={3}
                         required
                         name="explicacion_solucion"
                         value={currentPregunta.explicacion_solucion}
@@ -922,7 +918,7 @@ const Ejercicios = () => {
               >
                 <thead>
                   <tr>
-                    <th>ID</th>
+                    <th>#</th>
                     <th>Pregunta</th>
                     <th>Imagen</th>
                     <th>Tipo de Ejercicio</th>
@@ -935,9 +931,9 @@ const Ejercicios = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {currentItems.map((ejercicio) => (
+                  {currentItems.map((ejercicio, index) => (
                     <tr key={ejercicio.ejercicio_id}>
-                      <td>{ejercicio.ejercicio_id}</td>
+                      <td>{indexOfFirstItem + index + 1}</td>
                       <td>{ejercicio.pregunta}</td>
                       <td>
                         {ejercicio.imagen && (
@@ -945,7 +941,6 @@ const Ejercicios = () => {
                             src={`https://back-serious-game.vercel.app/src/uploads/${ejercicio.imagen}`}
                             alt={`https://back-serious-game.vercel.app/${ejercicio.imagen}`}
                             className="pregunta-imagen"
-                            style={{ maxWidth: "100px", maxHeight: "100px" }}
                           />
                         )}
                       </td>
@@ -983,14 +978,16 @@ const Ejercicios = () => {
                         <div className="action-buttons">
                           <Button
                             variant="danger"
-                            onClick={() => handleDelete(ejercicio.ejercicio_id)}
+                            onClick={() => {
+                              setEjercicioToDelete(ejercicio.ejercicio_id);
+                              setShowDeleteModal(true);
+                            }}
                           >
                             <FaTrash />
                           </Button>
                           <Button
                             variant="warning"
                             onClick={() => handleEdit(ejercicio.ejercicio_id)}
-                            className="ms-2"
                           >
                             <FaEdit />
                           </Button>
@@ -1008,13 +1005,12 @@ const Ejercicios = () => {
                                 opciones: Array(4).fill({
                                   texto_opcion: "",
                                   es_correcta: false,
-                                }), // Definir 4 opciones por defecto
+                                }),
                                 concepto_id: null,
                                 ejercicio_id: ejercicio.ejercicio_id,
                               });
                               setShowAddPreguntaModal(true);
                             }}
-                            className="ms-2"
                           >
                             <FaQuestion />
                           </Button>
@@ -1034,7 +1030,7 @@ const Ejercicios = () => {
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
                   />
-                  {paginationItems}
+                  {renderPaginationItems()}
                   <Pagination.Next
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
@@ -1049,6 +1045,34 @@ const Ejercicios = () => {
           </Row>
         </div>
       </Container>
+
+      <Modal
+        show={showDeleteModal}
+        onHide={() => setShowDeleteModal(false)}
+        size="lg"
+        dialogClassName="modal-50w no-scroll"
+      >
+        <Modal.Header closeButton className="modal-header-custom">
+          <Modal.Title className="modal-title-custom">
+            Confirmar Eliminación
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="modal-body-custom">
+          <p>¿Estás seguro de que deseas eliminar este ejercicio?</p>
+          <div className="d-flex justify-content-end">
+            <Button
+              variant="secondary"
+              onClick={() => setShowDeleteModal(false)}
+              className="me-2"
+            >
+              Cancelar
+            </Button>
+            <Button variant="danger" onClick={handleDelete}>
+              Eliminar
+            </Button>
+          </div>
+        </Modal.Body>
+      </Modal>
     </Layout>
   );
 };

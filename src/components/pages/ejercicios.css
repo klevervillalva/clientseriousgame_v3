@@ -131,3 +131,23 @@
 .modal-footer-custom .btn {
   margin-left: 1rem;
 }
+
+.action-buttons {
+  display: flex;
+  gap: 0.2rem;
+}
+
+.action-buttons .btn {
+  padding: 0.2rem 0.4rem;
+  font-size: 0.8rem;
+}
+
+.pregunta-imagen {
+  max-width: 50px;
+  max-height: 50px;
+}
+
+.modal-body-custom {
+  max-height: 70vh;
+  overflow-y: auto;
+}

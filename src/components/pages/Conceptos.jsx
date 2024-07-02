@@ -10,7 +10,9 @@ import {
   Pagination,
 } from "react-bootstrap";
 import axios from "axios";
-import { FaPlus, FaEdit, FaTrash, FaQuestionCircle } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaQuestion } from "react-icons/fa";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Layout from "./Layout";
 import backgroundImage from "../img/ciencia.jpg";
 import "./modal.css";
@@ -20,6 +22,8 @@ const Conceptos = () => {
   const [categorias, setCategorias] = useState([]);
   const [show, setShow] = useState(false);
   const [showModalPregunta, setShowModalPregunta] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [conceptoToDelete, setConceptoToDelete] = useState(null);
   const [currentConcepto, setCurrentConcepto] = useState({
     titulo: "",
     descripcion: "",
@@ -74,36 +78,43 @@ const Conceptos = () => {
       };
     }
 
-    const { data } = await axios.get(url, { params });
-    setConceptos(data);
+    try {
+      const { data } = await axios.get(url, { params });
+      setConceptos(data);
+      setCurrentPage(1);
+    } catch (error) {
+      console.error("Error al obtener los conceptos:", error);
+    }
   };
 
   const fetchCategorias = async () => {
     try {
-      const { data } = await axios.get(
-        "https://back-serious-game.vercel.app/api/categorias"
-      );
+      const { data } = await axios.get("https://back-serious-game.vercel.app/api/categorias");
       setCategorias(data);
     } catch (error) {
       console.error("Error al obtener las categorías:", error);
     }
   };
 
-  const handleDelete = async (concepto_id) => {
-    if (window.confirm("¿Estás seguro de que deseas eliminar este concepto?")) {
-      try {
-        const response = await axios.delete(
-          `https://back-serious-game.vercel.app/api/deleteconceptos/${concepto_id}`
+  const handleDelete = async () => {
+    try {
+      const response = await axios.delete(
+        `https://back-serious-game.vercel.app/api/deleteconceptos/${conceptoToDelete}`
+      );
+      if (response.status === 200) {
+        setConceptos(
+          conceptos.filter(
+            (concepto) => concepto.concepto_id !== conceptoToDelete
+          )
         );
-        if (response.status === 200) {
-          setConceptos(
-            conceptos.filter((concepto) => concepto.concepto_id !== concepto_id)
-          );
-        }
-      } catch (error) {
-        console.error("Error al eliminar el concepto:", error);
+        toast.success("Concepto eliminado con éxito");
       }
+    } catch (error) {
+      console.error("Error al eliminar el concepto:", error);
+      toast.error("Error al eliminar el concepto");
     }
+    setShowDeleteModal(false);
+    setConceptoToDelete(null);
   };
 
   const handleShow = (concepto = {}) => {
@@ -204,13 +215,17 @@ const Conceptos = () => {
             c.concepto_id === currentConcepto.concepto_id ? response.data : c
           )
         );
+        toast.success("Concepto actualizado con éxito");
       } else {
         setConceptos([...conceptos, response.data]);
+        toast.success("Concepto agregado con éxito");
       }
+      fetchConceptos();
       handleClose();
     } catch (error) {
       handleClose();
       console.error(error);
+      toast.error("Error al guardar el concepto");
     }
   };
 
@@ -222,7 +237,7 @@ const Conceptos = () => {
     );
 
     if (validOptions.length !== currentPregunta.opciones.length) {
-      alert("Todas las opciones deben tener texto antes de guardar.");
+      toast.error("Todas las opciones deben tener texto antes de guardar.");
       return;
     }
 
@@ -260,11 +275,17 @@ const Conceptos = () => {
       });
 
       setShowModalPregunta(false);
+      toast.success(
+        currentPregunta.pregunta_id
+          ? "Pregunta actualizada con éxito"
+          : "Pregunta agregada con éxito"
+      );
     } catch (error) {
       console.error(
         "Error al guardar la pregunta:",
         error.response?.data || error.message
       );
+      toast.error("Error al guardar la pregunta");
     }
   };
 
@@ -285,8 +306,14 @@ const Conceptos = () => {
           c.concepto_id === concepto.concepto_id ? response.data : c
         )
       );
+      toast.success(
+        `Concepto ${
+          updatedConcepto.estado ? "activado" : "desactivado"
+        } con éxito`
+      );
     } catch (error) {
       console.error("Error al actualizar el estado del concepto:", error);
+      toast.error("Error al actualizar el estado del concepto");
     }
   };
 
@@ -306,21 +333,45 @@ const Conceptos = () => {
     setCurrentPage(pageNumber);
   };
 
-  const paginationItems = [];
-  for (let number = 1; number <= totalPages; number++) {
-    paginationItems.push(
-      <Pagination.Item
-        key={number}
-        active={number === currentPage}
-        onClick={() => handlePageChange(number)}
-      >
-        {number}
-      </Pagination.Item>
-    );
-  }
+  const renderPaginationItems = () => {
+    const maxPagesToShow = 10;
+    let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = startPage + maxPagesToShow - 1;
+
+    if (endPage > totalPages) {
+      endPage = totalPages;
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+
+    const paginationItems = [];
+    for (let number = startPage; number <= endPage; number++) {
+      paginationItems.push(
+        <Pagination.Item
+          key={number}
+          active={number === currentPage}
+          onClick={() => handlePageChange(number)}
+        >
+          {number}
+        </Pagination.Item>
+      );
+    }
+
+    return paginationItems;
+  };
+
+  const handleShowDeleteModal = (concepto_id) => {
+    setConceptoToDelete(concepto_id);
+    setShowDeleteModal(true);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setShowDeleteModal(false);
+    setConceptoToDelete(null);
+  };
 
   return (
     <Layout pageTitle="Gestión de Conceptos">
+      <ToastContainer />
       <Container
         fluid
         className="p-4"
@@ -463,15 +514,17 @@ const Conceptos = () => {
                             </Button>
                             <Button
                               variant="danger"
-                              onClick={() => handleDelete(concepto.concepto_id)}
+                              onClick={() =>
+                                handleShowDeleteModal(concepto.concepto_id)
+                              }
                             >
                               <FaTrash />
                             </Button>
                             <Button
-                              variant="info"
+                              variant="primary"
                               onClick={() => handleShowModalPregunta(concepto)}
                             >
-                              <FaQuestionCircle />
+                              <FaQuestion />
                             </Button>
                           </div>
                         </td>
@@ -489,7 +542,7 @@ const Conceptos = () => {
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
                 />
-                {paginationItems}
+                {renderPaginationItems()}
                 <Pagination.Next
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
@@ -672,7 +725,8 @@ const Conceptos = () => {
               <Form.Group className="mb-3 custom-input">
                 <Form.Label>Detalles</Form.Label>
                 <Form.Control
-                  type="text"
+                  as="textarea"
+                  rows={3}
                   required
                   name="detalles"
                   value={currentPregunta.detalles}
@@ -687,7 +741,8 @@ const Conceptos = () => {
               <Form.Group className="mb-3 custom-input">
                 <Form.Label>Explicación Solución</Form.Label>
                 <Form.Control
-                  type="text"
+                  as="textarea"
+                  rows={3}
                   required
                   name="explicacion_solucion"
                   value={currentPregunta.explicacion_solucion}
@@ -750,6 +805,33 @@ const Conceptos = () => {
                 Guardar
               </Button>
             </Form>
+          </Modal.Body>
+        </Modal>
+
+        <Modal
+          show={showDeleteModal}
+          onHide={handleCloseDeleteModal}
+          dialogClassName="modal-50w no-scroll"
+        >
+          <Modal.Header className="modal-header-custom" closeButton>
+            <Modal.Title className="modal-title-custom">
+              Confirmar Eliminación
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body className="modal-body-custom">
+            <p>¿Estás seguro de que deseas eliminar este concepto?</p>
+            <div className="d-flex justify-content-end">
+              <Button
+                variant="secondary"
+                onClick={handleCloseDeleteModal}
+                className="me-2"
+              >
+                Cancelar
+              </Button>
+              <Button variant="danger" onClick={handleDelete}>
+                Eliminar
+              </Button>
+            </div>
           </Modal.Body>
         </Modal>
       </Container>
