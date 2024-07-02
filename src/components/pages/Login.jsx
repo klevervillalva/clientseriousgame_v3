@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   Form,
   Button,
@@ -17,6 +17,7 @@ import {
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import backgroundImage from "../img/utn.png";
+import { AuthContext } from "../pages/AuthContext";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -24,6 +25,7 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { login } = useContext(AuthContext); // Usa el contexto de autenticación
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -35,7 +37,8 @@ function Login() {
       );
       console.log("Login successful:", response.data);
 
-      localStorage.setItem("token", response.data.token);
+      login(response.data.token); // Utiliza el método login del contexto
+
       localStorage.setItem("user", JSON.stringify(response.data.user));
 
       axios.defaults.headers.common[

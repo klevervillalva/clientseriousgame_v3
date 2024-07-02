@@ -12,23 +12,27 @@ import Conceptos from "./components/pages/Conceptos";
 import Ejercicios from "./components/pages/Ejercicios";
 import Evaluacion from "./components/pages/Evaluacion";
 import Categorias from "./components/pages/Categorias";
+import { AuthProvider } from "./components/pages/AuthContext";
+import PrivateRoute from "./components/pages/PrivateRoute";
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Navigate replace to="/login" />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/homepage" element={<Principal />} />
-        <Route path="/add-user" element={<UserAdd />} />
-        <Route path="/usuarios" element={<Usuarios />} />
-        <Route path="/perfil" element={<Perfil />} />
-        <Route path="/conceptos" element={<Conceptos />} />
-        <Route path="/ejercicios" element={<Ejercicios />} />
-        <Route path="/evaluacion" element={<Evaluacion />} />
-        <Route path="/categorias" element={<Categorias/>} />
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Navigate replace to="/login" />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/homepage" element={<PrivateRoute><Principal /></PrivateRoute>} />
+          <Route path="/add-user" element={<PrivateRoute><UserAdd /></PrivateRoute>} />
+          <Route path="/usuarios" element={<PrivateRoute><Usuarios /></PrivateRoute>} />
+          <Route path="/perfil" element={<PrivateRoute><Perfil /></PrivateRoute>} />
+          <Route path="/conceptos" element={<PrivateRoute><Conceptos /></PrivateRoute>} />
+          <Route path="/ejercicios" element={<PrivateRoute><Ejercicios /></PrivateRoute>} />
+          <Route path="/evaluacion" element={<PrivateRoute><Evaluacion /></PrivateRoute>} />
+          <Route path="/categorias" element={<PrivateRoute><Categorias/></PrivateRoute>} />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 
