@@ -34,7 +34,14 @@ function Login() {
         { email, password }
       );
       console.log("Login successful:", response.data);
+
       localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+
+      axios.defaults.headers.common[
+        "Authorization"
+      ] = `Bearer ${response.data.token}`;
+
       navigate("/homepage");
     } catch (error) {
       console.error("Login error:", error.response);
@@ -45,7 +52,7 @@ function Login() {
     }
   };
 
-  const togglePasswordVisiblity = () => {
+  const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
@@ -90,11 +97,10 @@ function Login() {
         }}
       >
         <Card.Body>
-          <h2 className="text-center mb-3">Login</h2>{" "}
+          <h2 className="text-center mb-3">Login</h2>
           {error && <Alert variant="danger">{error}</Alert>}
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3" controlId="formBasicEmail">
-              {" "}
               <Form.Label>
                 <FontAwesomeIcon icon={faEnvelope} className="me-2" /> Correo
                 electrónico
@@ -114,7 +120,6 @@ function Login() {
             </Form.Group>
 
             <Form.Group className="mb-3" controlId="formBasicPassword">
-              {" "}
               <Form.Label>
                 <FontAwesomeIcon icon={faLock} className="me-2" /> Contraseña
               </Form.Label>
@@ -129,7 +134,7 @@ function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
-                <InputGroup.Text onClick={togglePasswordVisiblity}>
+                <InputGroup.Text onClick={togglePasswordVisibility}>
                   <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
                 </InputGroup.Text>
               </InputGroup>

@@ -38,7 +38,13 @@ const usePreguntas = () => {
           searchQuery
         )}`;
       }
-      const response = await axios.get(url);
+
+      const token = localStorage.getItem("token");
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setPreguntas(response.data);
     } catch (error) {
       console.error("Error al obtener preguntas:", error);
@@ -98,8 +104,14 @@ const Evaluacion = () => {
 
   const fetchConceptos = async () => {
     try {
+      const token = localStorage.getItem("token");
       const response = await axios.get(
-        "https://back-serious-game.vercel.app/api/getconceptos/"
+        "https://back-serious-game.vercel.app/api/getconceptos/",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       setConceptos(response.data);
     } catch (error) {
@@ -109,8 +121,14 @@ const Evaluacion = () => {
 
   const fetchEjercicios = async () => {
     try {
+      const token = localStorage.getItem("token");
       const response = await axios.get(
-        "https://back-serious-game.vercel.app/api/getejercicios/"
+        "https://back-serious-game.vercel.app/api/getejercicios/",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       setEjercicios(response.data);
     } catch (error) {
@@ -197,11 +215,15 @@ const Evaluacion = () => {
         ? `https://back-serious-game.vercel.app/api/preguntas/${currentPregunta.pregunta_id}`
         : "https://back-serious-game.vercel.app/api/preguntas";
 
+      const token = localStorage.getItem("token");
       await axios({
         method: method,
         url: url,
         data: formData,
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       setShowModal(false);
@@ -225,8 +247,14 @@ const Evaluacion = () => {
   const handleDelete = async () => {
     if (preguntaToDelete) {
       try {
+        const token = localStorage.getItem("token");
         await axios.delete(
-          `https://back-serious-game.vercel.app/api/preguntas/${preguntaToDelete}`
+          `https://back-serious-game.vercel.app/api/preguntas/${preguntaToDelete}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
         fetchPreguntas();
         toast.success("Pregunta eliminada exitosamente.");
@@ -265,12 +293,18 @@ const Evaluacion = () => {
     const updatedPregunta = { ...pregunta, estado: !pregunta.estado };
 
     try {
+      const token = localStorage.getItem("token");
       await axios.put(
         `https://back-serious-game.vercel.app/api/preguntas/${pregunta.pregunta_id}`,
         {
           ...updatedPregunta,
           concepto_id: updatedPregunta.concepto_id || null,
           ejercicio_id: updatedPregunta.ejercicio_id || null,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
       fetchPreguntas();

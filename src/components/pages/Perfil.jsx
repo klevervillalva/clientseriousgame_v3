@@ -49,7 +49,7 @@ const Perfil = () => {
         {
           headers: {
             Authorization: `Bearer ${token}`,
-          }
+          },
         }
       );
       setSuccess("Contraseña actualizada con éxito");
@@ -88,7 +88,7 @@ const Perfil = () => {
                 width: "90%",
                 maxWidth: "800px",
                 margin: "0 auto",
-                marginBottom: "20px", // Añadido margen inferior
+                marginBottom: "20px",
               }}
             >
               Perfil de Usuario
@@ -105,7 +105,7 @@ const Perfil = () => {
                 padding: "20px",
                 borderRadius: "10px",
                 boxShadow: "0 0 10px rgba(0,0,0,0.1)",
-                marginTop: "20px", // Añadido margen superior
+                marginTop: "20px",
               }}
             >
               <div style={{ marginBottom: "15px" }}>

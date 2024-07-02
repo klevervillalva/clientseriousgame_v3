@@ -36,10 +36,14 @@ const Usuarios = () => {
 
   const fetchUsers = async (searchQuery = "", searchRol = "") => {
     try {
+      const token = localStorage.getItem("token");
       const response = await axios.get(
         "https://back-serious-game.vercel.app/api/searchusers",
         {
           params: { nombre: searchQuery, rol: searchRol },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
       setUsers(response.data);
@@ -57,7 +61,15 @@ const Usuarios = () => {
   const handleDelete = async (userId) => {
     if (window.confirm("¿Estás seguro de que deseas eliminar este usuario?")) {
       try {
-        await axios.delete(`https://back-serious-game.vercel.app/api/deleteusers/${userId}`);
+        const token = localStorage.getItem("token");
+        await axios.delete(
+          `https://back-serious-game.vercel.app/api/deleteusers/${userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         fetchUsers();
       } catch (error) {
         console.error("Error al eliminar el usuario:", error);
@@ -69,13 +81,27 @@ const Usuarios = () => {
     event.preventDefault();
     setError("");
     try {
+      const token = localStorage.getItem("token");
       if (modalType === "edit") {
         await axios.put(
           `https://back-serious-game.vercel.app/api/putusers/${currentUser.usuario_id}`,
-          currentUser
+          currentUser,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
       } else {
-        await axios.post("https://back-serious-game.vercel.app/api/auth/signup", currentUser);
+        await axios.post(
+          "https://back-serious-game.vercel.app/api/auth/signup",
+          currentUser,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
       }
       setShowModal(false);
       fetchUsers();

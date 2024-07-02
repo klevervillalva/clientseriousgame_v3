@@ -39,9 +39,8 @@ const Principal = () => {
     fetchUserData();
   }, []);
 
-  console.log(userData);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const username = "Klever Villalva";
+  const username = userData.nombre || "Usuario";
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);

@@ -26,8 +26,14 @@ const useEjercicios = () => {
 
   const fetchEjercicios = async () => {
     try {
+      const token = localStorage.getItem("token");
       const response = await axios.get(
-        "https://back-serious-game.vercel.app/api/getejercicios"
+        "https://back-serious-game.vercel.app/api/getejercicios",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       setEjercicios(response.data);
     } catch (error) {
@@ -37,8 +43,14 @@ const useEjercicios = () => {
 
   const searchEjercicios = async (pregunta) => {
     try {
+      const token = localStorage.getItem("token");
       const response = await axios.get(
-        `https://back-serious-game.vercel.app/api/buscarejercicios?pregunta=${pregunta}`
+        `https://back-serious-game.vercel.app/api/buscarejercicios?pregunta=${pregunta}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       setEjercicios(response.data);
     } catch (error) {
@@ -48,8 +60,14 @@ const useEjercicios = () => {
 
   const searchEjerciciosByType = async (tipo) => {
     try {
+      const token = localStorage.getItem("token");
       const response = await axios.get(
-        `https://back-serious-game.vercel.app/api/busqueda/tipo-ejercicio?tipo=${tipo}`
+        `https://back-serious-game.vercel.app/api/busqueda/tipo-ejercicio?tipo=${tipo}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       setEjercicios(response.data);
     } catch (error) {
@@ -59,8 +77,14 @@ const useEjercicios = () => {
 
   const searchEjerciciosByEstado = async (estado) => {
     try {
+      const token = localStorage.getItem("token");
       const response = await axios.get(
-        `https://back-serious-game.vercel.app/api/busqueda/activos?estado=${estado}`
+        `https://back-serious-game.vercel.app/api/busqueda/activos?estado=${estado}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       setEjercicios(response.data);
     } catch (error) {
@@ -83,12 +107,18 @@ const usePreguntas = () => {
 
   const fetchPreguntas = useCallback(async () => {
     try {
+      const token = localStorage.getItem("token");
       const response = await axios.get(
         searchQuery
           ? `https://back-serious-game.vercel.app/api/search/${encodeURIComponent(
               searchQuery
             )}`
-          : "https://back-serious-game.vercel.app/api/preguntas/obtener"
+          : "https://back-serious-game.vercel.app/api/preguntas/obtener",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       setPreguntas(response.data);
     } catch (error) {
@@ -127,7 +157,7 @@ const Ejercicios = () => {
     explicacion_solucion: "",
     opciones: Array(4).fill({ texto_opcion: "", es_correcta: false }),
     matriz_punnett: Array(4).fill({ alelo1: "", alelo2: "", resultado: "" }),
-    estado: true, // Agregado estado por defecto
+    estado: true,
   });
   const [showAddPreguntaModal, setShowAddPreguntaModal] = useState(false);
   const [currentPregunta, setCurrentPregunta] = useState({
@@ -138,12 +168,12 @@ const Ejercicios = () => {
     detalles: "",
     explicacion_solucion: "",
     estado: true,
-    opciones: Array(4).fill({ texto_opcion: "", es_correcta: false }), // Definir 4 opciones por defecto
+    opciones: Array(4).fill({ texto_opcion: "", es_correcta: false }),
     concepto_id: null,
     ejercicio_id: null,
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5; // Número de ejercicios por página
+  const itemsPerPage = 5;
 
   useEffect(() => {
     fetchTiposEjercicios();
@@ -151,7 +181,15 @@ const Ejercicios = () => {
 
   const fetchTiposEjercicios = async () => {
     try {
-      const response = await axios.get("https://back-serious-game.vercel.app/api/tipos");
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        "https://back-serious-game.vercel.app/api/tipos",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setTiposEjercicios(response.data);
     } catch (error) {
       console.error("Error al obtener los tipos de ejercicios:", error);
@@ -231,7 +269,7 @@ const Ejercicios = () => {
       "explicacion_solucion",
       currentEjercicio.explicacion_solucion
     );
-    formData.append("estado", currentEjercicio.estado); // Agregado estado
+    formData.append("estado", currentEjercicio.estado);
     formData.append("opcionesMultiples", JSON.stringify(validOptions));
 
     if (currentEjercicio.tipo_id === "2") {
@@ -253,6 +291,7 @@ const Ejercicios = () => {
     }
 
     try {
+      const token = localStorage.getItem("token");
       const url = currentEjercicio.ejercicio_id
         ? `https://back-serious-game.vercel.app/api/updateejercicio/${currentEjercicio.ejercicio_id}`
         : "https://back-serious-game.vercel.app/api/postejercicios";
@@ -261,7 +300,10 @@ const Ejercicios = () => {
         method: currentEjercicio.ejercicio_id ? "put" : "post",
         url: url,
         data: formData,
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       setShowModal(false);
@@ -287,10 +329,16 @@ const Ejercicios = () => {
   const handleDelete = async () => {
     if (ejercicioToDelete) {
       try {
+        const token = localStorage.getItem("token");
         await axios.delete(
-          `https://back-serious-game.vercel.app/api/deleteejercicio/${ejercicioToDelete}`
+          `https://back-serious-game.vercel.app/api/deleteejercicio/${ejercicioToDelete}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
-        fetchEjercicios(); // Refresca la lista de ejercicios
+        fetchEjercicios();
         toast.success("Ejercicio eliminado exitosamente.");
       } catch (error) {
         console.error("Error al eliminar el ejercicio:", error);
@@ -334,9 +382,15 @@ const Ejercicios = () => {
     const updatedEjercicio = { ...ejercicio, estado: !ejercicio.estado };
 
     try {
+      const token = localStorage.getItem("token");
       await axios.put(
         `https://back-serious-game.vercel.app/api/updateejercicio/${ejercicio.ejercicio_id}`,
-        updatedEjercicio
+        updatedEjercicio,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       fetchEjercicios();
       toast.success("Estado del ejercicio actualizado.");
@@ -404,13 +458,17 @@ const Ejercicios = () => {
     }
 
     try {
+      const token = localStorage.getItem("token");
       const url = "https://back-serious-game.vercel.app/api/preguntas";
 
       await axios({
         method: "post",
         url: url,
         data: formData,
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       setShowAddPreguntaModal(false);
@@ -429,8 +487,14 @@ const Ejercicios = () => {
 
   const handleEdit = async (ejercicioId) => {
     try {
+      const token = localStorage.getItem("token");
       const response = await axios.get(
-        `https://back-serious-game.vercel.app/api/getejercicios/${ejercicioId}`
+        `https://back-serious-game.vercel.app/api/getejercicios/${ejercicioId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       const ejercicio = response.data;
       setCurrentEjercicio({
@@ -492,8 +556,8 @@ const Ejercicios = () => {
           backgroundImage: `url(${backgroundImage})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
-          paddingTop: "30px", // Agregar padding superior para mover contenido hacia arriba
-          overflowY: "auto", // Permitir desplazamiento vertical
+          paddingTop: "30px",
+          overflowY: "auto",
         }}
       >
         <div
@@ -562,8 +626,8 @@ const Ejercicios = () => {
             boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
             width: "100%",
             maxWidth: "1200px",
-            overflowY: "auto", // Permitir desplazamiento vertical en el contenedor
-            maxHeight: "500px", // Ajustar esta altura según tus necesidades
+            overflowY: "auto",
+            maxHeight: "500px",
           }}
         >
           <Row className="justify-content-md-center">
@@ -589,7 +653,7 @@ const Ejercicios = () => {
                       alelo2: "",
                       resultado: "",
                     }),
-                    estado: true, // Agregado estado por defecto
+                    estado: true,
                   });
                   setIsEditing(false);
                   setShowModal(true);
@@ -601,8 +665,8 @@ const Ejercicios = () => {
               <Modal
                 show={showModal}
                 onHide={() => setShowModal(false)}
-                size="lg" // Tamaño aumentado del modal
-                centered // Centrar el modal verticalmente
+                size="lg"
+                centered
                 className="custom-modal"
               >
                 <Modal.Header closeButton className="modal-header-custom">
@@ -800,8 +864,8 @@ const Ejercicios = () => {
               <Modal
                 show={showAddPreguntaModal}
                 onHide={() => setShowAddPreguntaModal(false)}
-                size="lg" // Ancho aumentado del modal
-                centered // Centrar el modal verticalmente
+                size="lg"
+                centered
                 className="custom-modal"
               >
                 <Modal.Header closeButton className="modal-header-custom">

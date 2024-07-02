@@ -14,12 +14,21 @@ const UserAdd = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("https://back-serious-game.vercel.app/api/auth/signup", {
-        nombre,
-        email,
-        password,
-        rol,
-      });
+      const token = localStorage.getItem("token");
+      await axios.post(
+        "https://back-serious-game.vercel.app/api/auth/signup",
+        {
+          nombre,
+          email,
+          password,
+          rol,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setMessage("Usuario creado exitosamente");
       setNombre("");
       setEmail("");

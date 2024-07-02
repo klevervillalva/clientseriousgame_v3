@@ -34,6 +34,11 @@ const TopNavbar = () => {
     fetchUserData();
   }, []);
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    window.location.href = "/login";
+  };
+
   return (
     <Navbar bg="dark" variant="dark" expand="lg" className="navbar-top">
       <Navbar.Brand>Mendel Genetics Game - UTN</Navbar.Brand>
@@ -44,7 +49,8 @@ const TopNavbar = () => {
         </Nav.Item>
         <Nav.Link
           as={Link}
-          to="/login"
+          to="#"
+          onClick={handleLogout}
           className="text-white d-flex align-items-center"
         >
           <FaSignOutAlt className="me-2" />

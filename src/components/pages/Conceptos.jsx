@@ -65,6 +65,7 @@ const Conceptos = () => {
     searchCategoria = "",
     searchEstado = ""
   ) => {
+    const token = localStorage.getItem("token");
     let url = "https://back-serious-game.vercel.app/api/getconceptos/";
     let params = {};
 
@@ -79,7 +80,12 @@ const Conceptos = () => {
     }
 
     try {
-      const { data } = await axios.get(url, { params });
+      const { data } = await axios.get(url, {
+        params,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setConceptos(data);
       setCurrentPage(1);
     } catch (error) {
@@ -88,8 +94,16 @@ const Conceptos = () => {
   };
 
   const fetchCategorias = async () => {
+    const token = localStorage.getItem("token");
     try {
-      const { data } = await axios.get("https://back-serious-game.vercel.app/api/categorias");
+      const { data } = await axios.get(
+        "https://back-serious-game.vercel.app/api/categorias",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setCategorias(data);
     } catch (error) {
       console.error("Error al obtener las categorías:", error);
@@ -97,9 +111,15 @@ const Conceptos = () => {
   };
 
   const handleDelete = async () => {
+    const token = localStorage.getItem("token");
     try {
       const response = await axios.delete(
-        `https://back-serious-game.vercel.app/api/deleteconceptos/${conceptoToDelete}`
+        `https://back-serious-game.vercel.app/api/deleteconceptos/${conceptoToDelete}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       if (response.status === 200) {
         setConceptos(
@@ -183,6 +203,7 @@ const Conceptos = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const token = localStorage.getItem("token");
     const formData = new FormData();
     formData.append("titulo", currentConcepto.titulo);
     formData.append("descripcion", currentConcepto.descripcion);
@@ -206,6 +227,7 @@ const Conceptos = () => {
         data: formData,
         headers: {
           "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -231,6 +253,7 @@ const Conceptos = () => {
 
   const handlePreguntaSubmit = async (e) => {
     e.preventDefault();
+    const token = localStorage.getItem("token");
 
     const validOptions = currentPregunta.opciones.filter(
       (op) => op.texto_opcion.trim() !== ""
@@ -271,7 +294,10 @@ const Conceptos = () => {
         method: method,
         url: url,
         data: formData,
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       setShowModalPregunta(false);
@@ -295,11 +321,17 @@ const Conceptos = () => {
   };
 
   const handleEstadoChange = async (concepto) => {
+    const token = localStorage.getItem("token");
     const updatedConcepto = { ...concepto, estado: !concepto.estado };
     try {
       const response = await axios.put(
         `https://back-serious-game.vercel.app/api/edit/${concepto.concepto_id}`,
-        updatedConcepto
+        updatedConcepto,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       setConceptos(
         conceptos.map((c) =>
